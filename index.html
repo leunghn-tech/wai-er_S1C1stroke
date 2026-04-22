@@ -3,29 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>中文筆順與部首學習網</title>
-    <!-- 引入 Tailwind CSS 作為版面設計 -->
+    <title>中文筆順與部首學習網 - SEN 友善版</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 Hanzi Writer 筆順核心庫 -->
     <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
     <style>
-        /* 設置適合中文字體的字型 */
         body {
             font-family: 'PingFang TC', 'Heiti TC', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
-            background-color: #fcfaf2; /* 柔和的宣紙底色，降低視覺對比負擔 */
+            background-color: #fcfaf2; 
+            transition: background-color 0.5s, background-image 0.5s;
+        }
+        .bg-pattern {
+            background-image: url('https://www.transparenttextures.com/patterns/rice-paper-2.png');
         }
         .kaishu {
             font-family: 'KaiTi', 'BiauKai', 'DFKai-SB', 'STKaiti', serif; 
         }
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* 動畫效果：針對 SpLD 學生增加視覺回饋，並優化流暢度 */
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             20% { transform: translateX(-4px); }
@@ -49,274 +44,1135 @@
         }
         .star-animate { animation: starPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 
-        /* 新增：平滑的面板淡入效果 */
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
         .fade-in-up { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        @keyframes floatAnim {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        .anim-float { animation: floatAnim 2s ease-in-out infinite; }
+        
+        @keyframes pulseAnim {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        .anim-pulse { animation: pulseAnim 1.5s ease-in-out infinite; }
+        
+        @keyframes spinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .anim-spin-slow { animation: spinSlow 8s linear infinite; }
+
+        @keyframes bounceSide {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(15px); }
+        }
+        .anim-bounce-side { animation: bounceSide 2s ease-in-out infinite; }
+
+        @keyframes shimmer {
+            100% { transform: translateX(100%); }
+        }
+
+        .intro-card-bg {
+            background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);
+        }
+        
+        .formula-card {
+            background: repeating-linear-gradient(45deg, #f8fafc, #f8fafc 10px, #ffffff 10px, #ffffff 20px);
+        }
+
+        .lego-block {
+            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2);
+            border-radius: 4px;
+            position: relative;
+        }
+        .lego-block::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 4px;
+            background: inherit;
+            border-radius: 2px 2px 0 0;
+            filter: brightness(1.1);
+        }
+
+        /* 感官友善 / 專注模式 */
+        body.focus-mode {
+            background-color: #f3f4f6; 
+        }
+        body.focus-mode .bg-pattern {
+            background-image: none !important; 
+        }
+        body.focus-mode .intro-card-bg {
+            background: #ffffff !important; 
+            border-color: #e5e7eb !important;
+        }
+        body.focus-mode .anim-float, 
+        body.focus-mode .anim-pulse, 
+        body.focus-mode .anim-bounce-side, 
+        body.focus-mode .anim-spin-slow {
+            animation: none !important;
+            transform: none !important;
+        }
+
+        .modal-enter { opacity: 1 !important; pointer-events: auto !important; }
+        .modal-enter > div { transform: scale(1) !important; }
+        
+        .tts-btn {
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .tts-btn:active {
+            transform: scale(0.9);
+        }
     </style>
 </head>
-<body class="text-gray-800 flex flex-col lg:flex-row h-[100dvh] overflow-hidden">
+<body class="text-gray-800 flex flex-col lg:flex-row h-[100dvh] overflow-hidden bg-pattern" onclick="window.initAudio()">
 
-    <!-- 左側邊欄：詞彙列表 (手機版與平板直向為頂部橫向滑動，PC與平板橫向維持左側) -->
-    <div class="w-full lg:w-72 bg-white shadow-xl flex flex-col z-10 lg:h-full border-b lg:border-r lg:border-b-0 border-amber-100 flex-shrink-0">
-        <div class="p-3 lg:p-5 bg-amber-700 text-white shadow-md relative">
-            <h1 class="text-xl lg:text-2xl font-bold tracking-widest text-center">詞彙遊樂園</h1>
+    <!-- 左側邊欄 -->
+    <div class="w-full lg:w-80 bg-white shadow-xl flex flex-col z-10 lg:h-[100dvh] border-b lg:border-r lg:border-b-0 border-gray-200 flex-shrink-0">
+        <div class="p-3 lg:p-4 bg-amber-700 text-white shadow-md relative flex flex-col gap-2">
+            <div class="flex justify-between items-center w-full">
+                <h1 class="text-xl font-bold tracking-widest text-center flex-1">詞彙遊樂園</h1>
+                <div class="flex gap-2">
+                    <button id="focus-toggle" onclick="window.toggleFocusMode(event)" class="text-sm px-2 py-1 bg-white/20 hover:bg-white/40 rounded-lg transition-all font-bold tracking-wide border border-white/30 text-white" title="開啟專注模式">🎮 遊戲</button>
+                    <button id="sound-toggle" onclick="window.toggleSound(event)" class="text-2xl hover:scale-110 transition-transform focus:outline-none" title="音效開關">🔊</button>
+                </div>
+            </div>
         </div>
+        
+        <div class="flex gap-1 p-2 bg-amber-50 text-sm font-bold border-b border-amber-100 shadow-inner justify-around">
+            <button onclick="window.filterDifficulty('all', this)" class="diff-btn flex-1 px-1 py-1 rounded-md text-amber-900 bg-amber-200 shadow-sm border border-amber-300 transition-all">全部</button>
+            <button onclick="window.filterDifficulty(1, this)" class="diff-btn flex-1 px-1 py-1 rounded-md text-gray-500 hover:bg-amber-100 border border-transparent transition-all">⭐初階</button>
+            <button onclick="window.filterDifficulty(2, this)" class="diff-btn flex-1 px-1 py-1 rounded-md text-gray-500 hover:bg-amber-100 border border-transparent transition-all">⭐⭐中階</button>
+            <button onclick="window.filterDifficulty(3, this)" class="diff-btn flex-1 px-1 py-1 rounded-md text-gray-500 hover:bg-amber-100 border border-transparent transition-all">⭐⭐⭐挑戰</button>
+        </div>
+
         <ul id="word-list" class="flex flex-row lg:flex-col overflow-x-auto lg:overflow-y-auto no-scrollbar p-2 lg:p-3 gap-2 bg-[#faf8ec] lg:flex-1">
-            <!-- 詞彙按鈕將透過 JavaScript 動態生成 -->
         </ul>
     </div>
 
     <!-- 右側主內容區 -->
-    <div class="flex-1 flex flex-col items-center p-4 lg:p-8 overflow-y-auto relative bg-[url('https://www.transparenttextures.com/patterns/rice-paper-2.png')]">
+    <div class="flex-1 h-[100dvh] overflow-y-auto p-4 md:p-8 lg:p-10 flex flex-col items-center relative">
         
-        <!-- 頂部：星星分數與當前詞彙顯示 -->
-        <div class="w-full max-w-4xl flex justify-between items-center mb-2">
-            <div class="bg-yellow-100 border-2 border-yellow-400 rounded-full px-6 py-2 shadow-sm flex items-center gap-2">
-                <span class="text-2xl">⭐</span>
-                <span class="font-bold text-yellow-700 text-xl tracking-wide">星星收集：<span id="score-display">0</span></span>
-            </div>
-        </div>
-
-        <div class="mb-4 md:mb-8 mt-2 w-full flex flex-col items-center">
-            <div id="word-display" class="text-5xl md:text-7xl kaishu flex space-x-2 md:space-x-6 justify-center flex-wrap gap-y-4">
-                <!-- 單字按鈕將透過 JavaScript 動態生成 -->
-            </div>
-            
-            <!-- 新增：詞語解釋區塊 (調整為圖文並排佈局) -->
-            <div id="word-explanation" class="mt-5 px-6 py-4 bg-[#fdf8ed] border-2 border-amber-200 rounded-2xl shadow-sm max-w-3xl w-full mx-4 transition-all hover:shadow-md">
-                <!-- 解釋文字將透過 JavaScript 動態生成 -->
-            </div>
-
-            <p class="text-center text-gray-500 mt-4 text-lg font-medium tracking-widest bg-white/60 px-4 py-1 rounded-full">👆 請點擊上方的字來學習</p>
-        </div>
-
-        <!-- 中間：筆順畫布與小遊戲資訊 -->
-        <div class="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl p-5 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 lg:gap-8 w-full max-w-5xl border-4 border-amber-100/50">
-            
-            <!-- 左側：田字格與畫布 -->
-            <div class="flex flex-col items-center justify-center flex-shrink-0">
-                <div class="relative w-[260px] h-[260px] bg-white border-4 border-amber-700 rounded-xl shadow-md overflow-hidden" id="canvas-container">
-                    <!-- 田字格背景線 -->
-                    <div class="absolute inset-0 pointer-events-none opacity-50">
-                        <div class="w-full h-full border-b-2 border-dashed border-amber-300 absolute top-1/2 transform -translate-y-1/2"></div>
-                        <div class="w-full h-full border-r-2 border-dashed border-amber-300 absolute left-1/2 transform -translate-x-1/2"></div>
-                        <div class="w-full h-full absolute border-b-2 border-dashed border-amber-300 transform rotate-45 scale-150 origin-center"></div>
-                        <div class="w-full h-full absolute border-b-2 border-dashed border-amber-300 transform -rotate-45 scale-150 origin-center"></div>
+        <!-- 頂部：星星分數與進度條 -->
+        <div class="w-full max-w-5xl 2xl:max-w-6xl flex flex-col md:flex-row justify-between items-center mb-4 md:mb-8 gap-3 md:gap-4 mx-auto">
+            <div class="w-full md:w-2/3 flex flex-col gap-2">
+                <div class="flex justify-between items-end px-1">
+                    <div class="bg-yellow-100 border-2 border-yellow-400 rounded-full px-4 py-1.5 shadow-sm flex items-center gap-2">
+                        <span class="text-xl md:text-2xl filter drop-shadow-sm">⭐</span>
+                        <span class="font-bold text-yellow-700 text-lg md:text-xl tracking-wide">收集：<span id="score-display" class="text-2xl ml-1">0</span></span>
                     </div>
-                    <!-- 筆順動畫容器 (加入 touch-action: none 防止觸控設備畫畫時網頁跟著滑動) -->
-                    <div id="character-canvas" class="absolute inset-0 z-10 cursor-pointer" style="touch-action: none;" title="點擊田字格進行書寫測驗！"></div>
+                    <div id="combo-badge" class="hidden font-black text-white bg-gradient-to-r from-red-500 to-orange-500 px-4 py-1 rounded-full shadow-md transform rotate-2 z-50 text-lg md:text-xl border-2 border-white transition-all duration-300 whitespace-nowrap">
+                        🔥 <span id="combo-count">2</span> 連擊！
+                    </div>
+                </div>
+                <div class="w-full bg-white/80 rounded-full h-3 md:h-4 shadow-inner border border-yellow-200 overflow-hidden relative">
+                    <div id="score-progress-bar" class="bg-gradient-to-r from-yellow-300 to-amber-500 h-full rounded-full transition-all duration-700 ease-out relative" style="width: 0%">
+                        <div class="absolute top-0 left-0 bottom-0 right-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_2s_infinite]"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="cheer-badge" class="hidden font-bold text-white bg-gradient-to-r from-orange-400 to-red-500 px-6 py-2 rounded-full shadow-lg transform -rotate-3 z-50 text-xl md:text-2xl whitespace-nowrap">
+                太神啦！🔥
+            </div>
+        </div>
+
+        <!-- 階段一：視覺化情境引入區 -->
+        <div id="intro-section" class="w-full max-w-4xl mx-auto mt-4 md:mt-10 flex flex-col items-center justify-center fade-in-up px-2">
+            <div class="intro-card-bg border-4 border-teal-200 rounded-3xl p-6 md:p-12 shadow-xl w-full flex flex-col items-center text-center relative overflow-hidden transition-colors">
+                <span class="absolute top-3 left-3 md:top-5 md:left-5 bg-teal-500 text-white px-3 py-1 rounded-full font-bold text-xs md:text-base shadow-sm tracking-widest">情境猜一猜</span>
+                
+                <div id="intro-visual" class="text-7xl md:text-9xl my-6 md:my-10 filter drop-shadow-xl anim-pulse"></div>
+                
+                <div class="bg-white/90 px-6 py-4 rounded-2xl shadow-sm mb-4 md:mb-6 w-full max-w-xl mx-auto border border-amber-100 flex flex-col gap-2">
+                    <div id="intro-context" class="flex items-center justify-center gap-3"></div>
+                </div>
+
+                <div id="intro-question" class="flex items-center justify-center gap-3 bg-white/70 px-4 py-3 md:px-8 md:py-5 rounded-2xl border border-teal-100 shadow-sm mb-6 md:mb-10 w-full max-w-2xl mx-auto"></div>
+                
+                <button onclick="window.revealWord()" class="bg-gradient-to-b from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white text-xl md:text-2xl font-bold py-3 px-8 md:py-5 md:px-12 rounded-full shadow-lg transform transition-transform hover:scale-105 active:scale-95 flex items-center gap-3 focus:outline-none">
+                    <span>💡</span> 揭曉答案並學寫字
+                </button>
+            </div>
+        </div>
+
+        <!-- 階段二：正式學習區 -->
+        <div id="learning-section" class="w-full flex flex-col items-center hidden fade-in-up max-w-5xl 2xl:max-w-6xl pb-10 px-1 sm:px-2 mx-auto">
+            
+            <div class="mb-4 md:mb-8 mt-2 w-full flex flex-col items-center">
+                <div id="word-display" class="text-5xl sm:text-6xl md:text-8xl kaishu flex space-x-3 md:space-x-6 justify-center flex-wrap gap-y-4 text-gray-800">
+                </div>
+                <div class="text-gray-500 mt-4 font-bold tracking-widest bg-white/80 px-5 py-1.5 rounded-full border border-gray-200 shadow-sm text-sm md:text-lg">👆 點擊上方單字來切換學習</div>
+            </div>
+
+            <!-- 第一區：單字特訓 -->
+            <div class="bg-white/95 backdrop-blur-sm rounded-2xl md:rounded-3xl shadow-xl p-4 sm:p-5 lg:p-10 flex flex-col lg:flex-row items-center lg:items-stretch gap-5 lg:gap-10 w-full border-4 border-amber-100/50 mb-6 md:mb-10 transition-colors">
+                
+                <div class="flex flex-col items-center justify-start flex-shrink-0 w-full lg:w-[400px]">
+                    <div class="relative w-[260px] h-[260px] sm:w-[320px] sm:h-[320px] lg:w-[350px] lg:h-[350px] bg-white border-4 border-amber-700 rounded-xl shadow-md overflow-hidden" id="canvas-container">
+                        <div class="absolute inset-0 pointer-events-none opacity-50">
+                            <div class="w-full h-full border-b-2 border-dashed border-amber-300 absolute top-1/2 transform -translate-y-1/2"></div>
+                            <div class="w-full h-full border-r-2 border-dashed border-amber-300 absolute left-1/2 transform -translate-x-1/2"></div>
+                            <div class="w-full h-full absolute border-b-2 border-dashed border-amber-300 transform rotate-45 scale-150 origin-center"></div>
+                            <div class="w-full h-full absolute border-b-2 border-dashed border-amber-300 transform -rotate-45 scale-150 origin-center"></div>
+                        </div>
+                        <div id="character-canvas" class="absolute inset-0 z-10 cursor-pointer" style="touch-action: none;" title="點擊田字格進行書寫測驗！"></div>
+                        
+                        <div id="success-animation" class="absolute inset-0 z-20 pointer-events-none flex items-center justify-center hidden">
+                            <span class="text-7xl lg:text-9xl filter drop-shadow-lg">🌟</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 lg:mt-8 flex justify-center gap-3 lg:gap-5 w-full">
+                        <button onclick="window.playAnimation()" class="px-5 py-3 lg:px-8 lg:py-4 bg-amber-600 hover:bg-amber-700 text-white rounded-full shadow-md transition-transform active:scale-95 font-bold text-lg lg:text-2xl flex items-center gap-1 lg:gap-2 focus:outline-none">
+                            ▶️ 播放
+                        </button>
+                        <button onclick="window.startQuiz()" class="px-5 py-3 lg:px-8 lg:py-4 bg-teal-600 hover:bg-teal-700 text-white rounded-full shadow-md transition-transform active:scale-95 font-bold text-lg lg:text-2xl flex items-center gap-1 lg:gap-2 relative overflow-hidden group focus:outline-none whitespace-nowrap">
+                            <span class="relative z-10 flex items-center">✍️ 自己寫 <span class="ml-1 lg:ml-3 text-xs lg:text-base bg-yellow-400 text-yellow-900 px-2 py-0.5 lg:py-1 rounded-full font-extrabold border border-yellow-500 shadow-sm leading-none">⭐ 2分</span></span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex-1 w-full flex flex-col justify-between" id="right-info-panel">
+                    <div>
+                        <div class="flex items-center gap-2 md:gap-3 border-b-4 border-amber-200 pb-2 md:pb-4 mb-4 md:mb-6">
+                            <span class="text-3xl lg:text-5xl">🕵️</span>
+                            <h2 class="text-2xl lg:text-4xl font-bold text-amber-900 tracking-wide">字形密碼戰</h2>
+                        </div>
+                        
+                        <div class="bg-[#fffdf7] rounded-xl lg:rounded-3xl p-4 sm:p-5 lg:p-8 border-2 border-amber-100 shadow-sm flex flex-col gap-4 lg:gap-6 relative transition-colors">
+                            
+                            <div class="flex items-center justify-between bg-white px-3 lg:px-6 py-2 lg:py-4 rounded-xl border border-gray-200 shadow-inner w-full gap-2" id="info-char-container">
+                                <!-- Target Character Injection -->
+                            </div>
+
+                            <div class="flex flex-col items-center gap-2 lg:gap-4 w-full">
+                                <span class="text-gray-600 font-bold text-lg lg:text-2xl self-start pt-1 lg:pt-2">1. 找部首：</span>
+                                <span id="game-status" class="text-sm lg:text-xl font-bold text-amber-600 bg-amber-100 px-3 lg:px-6 py-1.5 lg:py-3 rounded-full transition-colors duration-300 w-full text-center max-w-xl">選出對的部首解開防錯密碼！</span>
+                                <div id="radical-options" class="flex gap-3 lg:gap-6 flex-wrap justify-center w-full mt-1 lg:mt-3">
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col items-center w-full transition-all duration-700 ease-in-out mt-2 lg:mt-5" id="components-section" style="opacity: 0.3; filter: grayscale(100%); pointer-events: none;">
+                                <span class="text-gray-600 font-bold text-lg lg:text-2xl self-start pt-1 lg:pt-2 mb-2 lg:mb-4">2. 拆字與防錯密碼：</span>
+                                
+                                <div class="w-full max-w-2xl bg-white border-2 border-teal-200 rounded-xl lg:rounded-3xl p-4 lg:p-6 shadow-sm">
+                                    <div id="info-components" class="flex flex-wrap justify-center items-center gap-2 lg:gap-4 transition-all duration-300 mb-3 lg:mb-5 pb-3 lg:pb-5 border-b-2 border-dashed border-gray-200">
+                                        <span class="text-2xl lg:text-4xl text-gray-400 kaishu font-bold">???</span>
+                                    </div>
+                                    
+                                    <div id="char-hint-box" class="hidden">
+                                        <div class="flex items-start gap-2 lg:gap-4 bg-red-50 p-3 lg:p-5 rounded-lg lg:rounded-2xl border border-red-200">
+                                            <span class="text-2xl lg:text-4xl mt-0.5 lg:mt-1">🚨</span>
+                                            <div class="flex-1">
+                                                <span class="text-base lg:text-xl font-bold text-red-800 block mb-1 lg:mb-2">防錯密碼口訣</span>
+                                                <div class="flex items-center gap-2">
+                                                    <p id="char-hint-text" class="text-base lg:text-xl text-gray-800 font-medium leading-relaxed tracking-wide flex-1"></p>
+                                                    <button onclick="window.speakText(document.getElementById('char-hint-text').textContent, event)" class="tts-btn inline-flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors shadow-sm focus:outline-none flex-shrink-0" title="朗讀">🗣️</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
                     
-                    <!-- 寫對時的星星動畫容器 -->
-                    <div id="success-animation" class="absolute inset-0 z-20 pointer-events-none flex items-center justify-center hidden">
-                        <span class="text-8xl filter drop-shadow-lg">🌟</span>
+                    <div class="mt-4 lg:mt-6 bg-blue-50 border-l-8 border-blue-400 p-4 lg:p-6 rounded-lg lg:rounded-2xl shadow-sm transition-all duration-300 max-w-3xl mx-auto w-full">
+                        <div id="quiz-message" class="text-blue-800 font-bold text-base lg:text-xl flex items-center gap-2 lg:gap-3 transition-all justify-center">
+                            <span>💡</span> 點擊左邊「▶️ 播放」看筆順，或「✍️ 自己寫」拿星星！
+                        </div>
                     </div>
-                </div>
-
-                <!-- 控制按鈕 -->
-                <div class="mt-6 flex flex-wrap justify-center gap-4 w-full">
-                    <button onclick="playAnimation()" class="px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-full shadow-md transition-transform active:scale-95 font-bold text-lg flex items-center gap-1">
-                        ▶️ 播放
-                    </button>
-                    <button onclick="startQuiz()" class="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-full shadow-md transition-transform active:scale-95 font-bold text-lg flex items-center gap-1 relative overflow-hidden group">
-                        <span class="relative z-10">✍️ 自己寫</span>
-                        <!-- 按鈕高光特效 -->
-                        <div class="absolute inset-0 w-1/4 h-full bg-white/30 transform -skew-x-12 -translate-x-full group-hover:animate-[shimmer_1s_infinite]"></div>
-                    </button>
                 </div>
             </div>
 
-            <!-- 右側：字元遊戲與資訊 (SpLD 友善排版) -->
-            <div class="flex-1 w-full flex flex-col" id="right-info-panel">
-                <div class="flex items-center gap-2 border-b-4 border-amber-200 pb-3 mb-5">
-                    <span class="text-3xl">🕵️</span>
-                    <h2 class="text-2xl font-bold text-amber-900 tracking-wide">部首小偵探</h2>
+            <!-- 第二區：詞語應用 -->
+            <div class="w-full flex flex-col gap-4">
+                <div class="flex items-center gap-2 md:gap-4 mb-1 md:mb-4 px-1 md:px-2 border-b-4 border-amber-700 pb-2 inline-flex self-start">
+                    <span class="text-3xl md:text-5xl">📖</span>
+                    <h2 class="text-2xl md:text-4xl font-bold text-amber-900 tracking-wide">詞語全貌與應用</h2>
                 </div>
                 
-                <div class="bg-[#fffdf7] rounded-2xl p-6 border-2 border-amber-100 shadow-sm flex-1 flex flex-col gap-6">
-                    <!-- 目標字 -->
-                    <div class="grid grid-cols-[80px_1fr] sm:grid-cols-[100px_1fr] gap-2 sm:gap-4 items-center">
-                        <span class="text-gray-600 font-bold text-xl">目標字：</span>
-                        <div class="flex items-center">
-                            <span id="info-char" class="font-bold text-5xl kaishu text-gray-800 bg-white px-4 py-2 rounded-xl shadow-inner border border-gray-100 inline-block transition-all"></span>
-                        </div>
-                    </div>
-
-                    <!-- 遊戲區：找部首 -->
-                    <div class="grid grid-cols-[80px_1fr] sm:grid-cols-[100px_1fr] gap-2 sm:gap-4 items-start">
-                        <span class="text-gray-600 font-bold text-xl pt-3">找部首：</span>
-                        <div class="flex flex-col items-start gap-3 w-full">
-                            <span id="game-status" class="text-sm font-bold text-amber-600 bg-amber-100 px-3 py-1 rounded-full transition-colors duration-300">請從下方選出正確的部首！</span>
-                            <div id="radical-options" class="flex gap-3 flex-wrap">
-                                <!-- 選項將動態生成 -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 部件區：隱藏直到答對部首 -->
-                    <div class="grid grid-cols-[80px_1fr] sm:grid-cols-[100px_1fr] gap-2 sm:gap-4 items-start transition-all duration-700 ease-in-out" id="components-section" style="opacity: 0.3; filter: grayscale(100%); pointer-events: none;">
-                        <span class="text-gray-600 font-bold text-xl pt-2">拆部件：</span>
-                        <div class="flex flex-col items-start">
-                            <span id="info-components" class="font-bold text-3xl text-teal-700 kaishu block mb-1 tracking-widest transition-all duration-300">???</span>
-                            <p class="text-sm text-gray-500 font-medium mt-1">答對部首就能解鎖部件喔！</p>
-                        </div>
-                    </div>
+                <div id="word-explanation" class="px-5 py-5 md:px-10 md:py-8 bg-[#fdf8ed] border-2 border-amber-200 rounded-2xl md:rounded-3xl shadow-sm w-full max-w-4xl mx-auto transition-all hover:shadow-md mt-1 md:mt-2">
                 </div>
 
-                <!-- 測驗提示區 -->
-                <div class="mt-5 bg-blue-50 border-l-8 border-blue-400 p-4 rounded-r-xl shadow-sm transition-all duration-300">
-                    <div id="quiz-message" class="text-blue-800 font-bold text-lg flex items-center gap-2 transition-all">
-                        <span>💡</span> 點擊左下方的「自己寫」可以挑戰筆順，完成有星星獎勵！
-                    </div>
+                <div id="word-advanced-usage" class="w-full bg-blue-50 border-2 border-blue-200 rounded-2xl md:rounded-3xl p-4 md:p-10 shadow-sm hidden fade-in-up mt-1 md:mt-4 transition-colors">
                 </div>
             </div>
+
+        </div>
+    </div>
+
+    <!-- 🏆 里程碑慶祝彈窗 -->
+    <div id="milestone-modal" class="fixed inset-0 z-[100] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300 bg-black/60 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-8 md:p-14 shadow-2xl flex flex-col items-center transform scale-90 transition-transform duration-300 text-center border-8 border-yellow-400 max-w-2xl w-11/12">
+            <span class="text-7xl md:text-9xl mb-4 animate-bounce filter drop-shadow-md">🏆</span>
+            <h2 class="text-3xl md:text-5xl font-black text-amber-600 mb-4 tracking-wide">太厲害了！</h2>
+            <p class="text-xl md:text-3xl font-bold text-gray-700 mb-8 leading-relaxed">
+                你已經成功收集了 <span id="milestone-score-text" class="text-red-500 text-4xl md:text-6xl mx-2 font-black">50</span> 顆星星！<br>
+                <span id="milestone-subtext" class="text-lg md:text-2xl text-gray-500 mt-2 block">繼續解鎖下一個成就吧！</span>
+            </p>
+            <button onclick="window.closeMilestone()" class="bg-gradient-to-b from-yellow-400 to-yellow-600 text-white font-bold text-xl md:text-2xl px-10 py-4 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all w-full md:w-auto focus:outline-none">
+                繼續闖關 🚀
+            </button>
+            <div id="confetti-container" class="absolute inset-0 pointer-events-none overflow-hidden rounded-3xl"></div>
         </div>
     </div>
 
     <script>
-        // 詞彙設定 (依照您的需求更新)
-        const words = [
-            "機敏", "朦朧", "躥出", "懊喪", "左盼右盼", "怏怏", 
-            "累贅", "譴責", "佼佼者", "吃虧", "風馳電掣", 
-            "歪歪扭扭", "蜷縮", "跌跌撞撞", "瞇縫", "不約而同"
+        // ==========================================
+        // 1. 全域變數強制掛載到 Window 物件，徹底解決 ReferenceError
+        // ==========================================
+        window.focusMode = false;
+        window.audioCtx = null;
+        window.soundEnabled = true;
+        window.writer = null;
+        window.activeWordBtn = null;
+        window.currentWord = "";
+        window.globalScore = 0;
+        window.sentenceAttemptCount = 0;
+        window.currentMistakes = 0;
+        window.usedHint = false;
+        window.currentFilter = 'all';
+        window.currentCombo = 0;
+
+        window.MAX_SCORE = 140; 
+        window.MILESTONES = [50, 100, 140];
+        window.reachedMilestones = new Set();
+        window.completedTasks = new Set();
+        window.charDataCache = {};
+
+        // ==========================================
+        // 2. 核心功能庫與音效系統
+        // ==========================================
+        window.extractEmoji = function(str) {
+            const regex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E0}-\u{1F1FF}\u{1F200}-\u{1F2FF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}\u{1F004}\u{1F0CF}\u{1F170}-\u{1F251}]/u;
+            const match = str.match(regex);
+            return match ? match[0] : '';
+        };
+
+        window.speakText = function(text, event) {
+            if (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); 
+                const cleanText = text.replace(/<[^>]*>?/gm, '').replace(/\[|\]/g, ''); 
+                const utterance = new SpeechSynthesisUtterance(cleanText);
+                utterance.lang = 'zh-HK'; 
+                utterance.rate = 0.85; 
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert("您的瀏覽器不支援語音朗讀功能。");
+            }
+        };
+
+        window.toggleFocusMode = function(e) {
+            e.stopPropagation();
+            window.focusMode = !window.focusMode;
+            const body = document.body;
+            const btn = document.getElementById('focus-toggle');
+            
+            if (window.focusMode) {
+                body.classList.add('focus-mode');
+                btn.innerHTML = '🧘 專注';
+                btn.classList.add('bg-white/80', 'text-amber-900', 'shadow-sm');
+                btn.classList.remove('bg-white/20', 'text-white');
+            } else {
+                body.classList.remove('focus-mode');
+                btn.innerHTML = '🎮 遊戲';
+                btn.classList.remove('bg-white/80', 'text-amber-900', 'shadow-sm');
+                btn.classList.add('bg-white/20', 'text-white');
+            }
+            btn.classList.add('pop');
+            setTimeout(() => btn.classList.remove('pop'), 300);
+        };
+
+        window.initAudio = function() {
+            if (!window.audioCtx) {
+                window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (window.audioCtx.state === 'suspended') {
+                window.audioCtx.resume();
+            }
+        };
+
+        window.toggleSound = function(e) {
+            e.stopPropagation();
+            window.soundEnabled = !window.soundEnabled;
+            document.getElementById('sound-toggle').textContent = window.soundEnabled ? '🔊' : '🔇';
+            document.getElementById('sound-toggle').classList.add('pop');
+            setTimeout(() => document.getElementById('sound-toggle').classList.remove('pop'), 300);
+        };
+
+        window.playSound = function(type) {
+            if (!window.soundEnabled || !window.audioCtx) return;
+            const osc = window.audioCtx.createOscillator();
+            const gainNode = window.audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(window.audioCtx.destination);
+
+            if (type === 'correct') { 
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, window.audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, window.audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.1, window.audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, window.audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(window.audioCtx.currentTime + 0.1);
+            } else if (type === 'wrong') { 
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(200, window.audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(150, window.audioCtx.currentTime + 0.2);
+                gainNode.gain.setValueAtTime(0.1, window.audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, window.audioCtx.currentTime + 0.2);
+                osc.start(); osc.stop(window.audioCtx.currentTime + 0.2);
+            } else if (type === 'star') { 
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, window.audioCtx.currentTime); 
+                osc.frequency.setValueAtTime(554.37, window.audioCtx.currentTime + 0.1); 
+                osc.frequency.setValueAtTime(659.25, window.audioCtx.currentTime + 0.2); 
+                gainNode.gain.setValueAtTime(0.1, window.audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0, window.audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(window.audioCtx.currentTime + 0.3);
+            } else if (type === 'pop') { 
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, window.audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.05, window.audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, window.audioCtx.currentTime + 0.05);
+                osc.start(); osc.stop(window.audioCtx.currentTime + 0.05);
+            } else if (type === 'reveal') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, window.audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(900, window.audioCtx.currentTime + 0.3);
+                gainNode.gain.setValueAtTime(0.1, window.audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0, window.audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(window.audioCtx.currentTime + 0.3);
+            } else if (type === 'milestone') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, window.audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, window.audioCtx.currentTime + 0.2);
+                osc.frequency.exponentialRampToValueAtTime(1200, window.audioCtx.currentTime + 0.4);
+                gainNode.gain.setValueAtTime(0.2, window.audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0, window.audioCtx.currentTime + 0.8);
+                osc.start(); osc.stop(window.audioCtx.currentTime + 0.8);
+            }
+        };
+
+        window.showCheer = function() {
+            const cheers = ["太神啦！🔥", "有料喔！😎", "超帥！⚡", "輕鬆秒殺！🎯", "繼續保持！💪"];
+            const badge = document.getElementById('cheer-badge');
+            badge.textContent = cheers[Math.floor(Math.random() * cheers.length)];
+            badge.classList.remove('hidden');
+            badge.classList.add('pop');
+            setTimeout(() => {
+                badge.classList.add('hidden');
+                badge.classList.remove('pop');
+            }, 2000);
+        };
+
+        window.updateProgress = function() {
+            const progress = (window.globalScore / window.MAX_SCORE) * 100;
+            const bar = document.getElementById('score-progress-bar');
+            if (bar) bar.style.width = progress + '%';
+        };
+
+        window.updateCombo = function(isCorrect) {
+            const badge = document.getElementById('combo-badge');
+            const countDisplay = document.getElementById('combo-count');
+            
+            if (isCorrect) {
+                window.currentCombo++;
+                if (window.currentCombo >= 2) {
+                    countDisplay.textContent = window.currentCombo;
+                    badge.classList.remove('hidden', 'pop');
+                    void badge.offsetWidth; 
+                    badge.classList.add('pop');
+                    
+                    if (window.currentCombo % 3 === 0) {
+                        window.showCheer();
+                    }
+                }
+            } else {
+                window.currentCombo = 0;
+                badge.classList.add('hidden');
+            }
+        };
+
+        window.addScore = function(points) {
+            window.globalScore += points;
+            if(window.globalScore > window.MAX_SCORE) window.globalScore = window.MAX_SCORE; 
+            
+            const display = document.getElementById('score-display');
+            display.textContent = window.globalScore;
+            display.classList.add('pop');
+            display.style.color = '#ca8a04'; 
+            
+            window.updateProgress(); 
+            
+            window.MILESTONES.forEach(milestone => {
+                if (window.globalScore >= milestone && !window.reachedMilestones.has(milestone)) {
+                    window.reachedMilestones.add(milestone);
+                    setTimeout(() => {
+                        window.triggerMilestoneCelebration(milestone);
+                    }, 500); 
+                }
+            });
+
+            setTimeout(() => {
+                display.classList.remove('pop');
+                display.style.color = '';
+            }, 400);
+        };
+
+        window.setQuizMessage = function(msg, colorType) {
+            const msgBox = document.getElementById('quiz-message');
+            const colorMap = {
+                'blue': 'text-blue-800 bg-blue-50 border-blue-400',
+                'teal': 'text-teal-800 bg-teal-50 border-teal-500',
+                'red': 'text-red-700 bg-red-50 border-red-400',
+                'green': 'text-green-800 bg-green-50 border-green-500'
+            };
+            msgBox.innerHTML = msg;
+            msgBox.parentElement.className = `mt-3 md:mt-5 border-l-8 p-3 md:p-6 rounded-r-2xl shadow-sm transition-colors duration-300 ${colorMap[colorType].split(' ').slice(1).join(' ')}`;
+            msgBox.className = `font-bold text-base md:text-2xl flex items-center gap-2 md:gap-3 ${colorMap[colorType].split(' ')[0]}`;
+        };
+
+        // ==========================================
+        // 3. 資料庫
+        // ==========================================
+        const wordDataList = [
+            { word: "吃虧", level: 1 }, { word: "歪歪扭扭", level: 1 }, { word: "跌跌撞撞", level: 1 }, { word: "不約而同", level: 1 }, { word: "累贅", level: 1 },
+            { word: "機敏", level: 2 }, { word: "朦朧", level: 2 }, { word: "躥出", level: 2 }, { word: "懊喪", level: 2 }, { word: "左盼右盼", level: 2 },
+            { word: "怏怏", level: 3 }, { word: "譴責", level: 3 }, { word: "佼佼者", level: 3 }, { word: "風馳電掣", level: 3 }, { word: "蜷縮", level: 3 }, { word: "瞇縫", level: 3 }
         ];
 
-        // 詞語解釋字典 (加入英文註釋與圖示)
+        const wordIntros = {
+            "機敏": { icon: "🧠⚡", anim: "anim-pulse", ctx: "💡 提示：形容動作很快、頭腦很聰明。", q: "🤔 這是什麼形容詞？" },
+            "朦朧": { icon: "🌫️👀", anim: "anim-float", ctx: "💡 提示：形容看不清楚、模糊的樣子。", q: "🤔 這是什麼形容詞？" },
+            "躥出": { icon: "🐆💨", anim: "anim-bounce-side", ctx: "💡 提示：突然很快地跳出來。", q: "🤔 這是什麼動作？" },
+            "懊喪": { icon: "😞💔", anim: "anim-float", ctx: "💡 提示：心裡覺得很後悔、很沮喪。", q: "🤔 這是什麼形容詞？" },
+            "左盼右盼": { icon: "👀🔄", anim: "anim-spin-slow", ctx: "💡 提示：頭轉來轉去，到處看。", q: "🤔 這是什麼動作？" },
+            "怏怏": { icon: "😒", anim: "anim-float", ctx: "💡 提示：很不高興、心裡不服氣的樣子。", q: "🤔 這是什麼形容詞？" },
+            "累贅": { icon: "🎒💦", anim: "anim-pulse", ctx: "💡 提示：多餘的、會拖累別人的東西。", q: "🤔 這是什麼名詞？" },
+            "譴責": { icon: "🗣️😠", anim: "anim-shake", ctx: "💡 提示：很嚴厲地罵人、批評別人做錯事。", q: "🤔 這是什麼動作？" },
+            "佼佼者": { icon: "🥇🌟", anim: "anim-pulse", ctx: "💡 提示：在一群人裡面最厲害、最優秀的那個人。", q: "🤔 這是什麼名詞？" },
+            "吃虧": { icon: "📉💸", anim: "anim-float", ctx: "💡 提示：受到損失，或者被人佔了便宜。", q: "🤔 這是什麼動作？" },
+            "風馳電掣": { icon: "🏎️⚡", anim: "anim-bounce-side", ctx: "💡 提示：形容速度超級快，像風和閃電一樣。", q: "🤔 這是什麼形容詞？" },
+            "歪歪扭扭": { icon: "〰️🥴", anim: "anim-spin-slow", ctx: "💡 提示：形容東西不直、斜來斜去的樣子。", q: "🤔 這是什麼形容詞？" },
+            "蜷縮": { icon: "🥶🍤", anim: "anim-pulse", ctx: "💡 提示：因為冷或害怕，把身體捲成一團。", q: "🤔 這是什麼動作？" },
+            "跌跌撞撞": { icon: "🚶‍♂️💥", anim: "anim-shake", ctx: "💡 提示：走路不穩，好像快要跌倒的樣子。", q: "🤔 這是什麼形容詞？" },
+            "瞇縫": { icon: "😑👁️", anim: "anim-float", ctx: "💡 提示：把眼睛微微閉起來，只留一條細縫。", q: "🤔 這是什麼動作？" },
+            "不約而同": { icon: "👯‍♂️💡", anim: "anim-pulse", ctx: "💡 提示：大家沒有事先商量，卻做出一樣的動作。", q: "🤔 這是什麼副詞？" }
+        };
+
         const wordExplanations = {
-            "機敏": { text: "機智敏捷，反應很快。<br/><span class='text-amber-600 text-base'>smart (adj.)</span>", icon: "🧠" },
-            "朦朧": { text: "模糊不清，看不太清楚的樣子。<br/><span class='text-amber-600 text-base'>hazy (adj.)</span>", icon: "🌫️" },
-            "躥出": { text: "向上或向前跳躍出來。<br/><span class='text-amber-600 text-base'>jump out (v.)</span>", icon: "🐇" },
-            "懊喪": { text: "因事情不如意而情緒低落、懊惱。<br/><span class='text-amber-600 text-base'>regretful (adj.)</span>", icon: "😔" },
-            "左盼右盼": { text: "四處張望。<br/><span class='text-amber-600 text-base'>looking around (v.)</span>", icon: "👀" },
-            "怏怏": { text: "心中不服、不快樂的樣子。<br/><span class='text-amber-600 text-base'>unhappy (adj.)</span>", icon: "😒" },
-            "累贅": { text: "多餘、麻煩，或指拖累人的事物。<br/><span class='text-amber-600 text-base'>burden (n.)</span>", icon: "🪨" },
-            "譴責": { text: "嚴厲地責備。<br/><span class='text-amber-600 text-base'>reprimand (v.)</span>", icon: "😠" },
-            "佼佼者": { text: "在同類中特別突出、優秀的人。<br/><span class='text-amber-600 text-base'>outstanding (adj.)</span>", icon: "🌟" },
-            "吃虧": { text: "受到損失或傷害。<br/><span class='text-amber-600 text-base'>suffer a loss (v.)</span>", icon: "🤕" },
-            "風馳電掣": { text: "形容速度極快，像風和閃電一樣。<br/><span class='text-amber-600 text-base'>fast (adj.)</span>", icon: "⚡" },
-            "歪歪扭扭": { text: "不端正、不直的樣子。<br/><span class='text-amber-600 text-base'>crooked (adj.)</span>", icon: "〰️" },
-            "蜷縮": { text: "身體彎曲縮成一團。<br/><span class='text-amber-600 text-base'>curl up (v.)</span>", icon: "🧎" },
-            "跌跌撞撞": { text: "走路不穩，不斷跌倒和碰撞的樣子。<br/><span class='text-amber-600 text-base'>stumbling (adj.)</span>", icon: "🤕" },
-            "瞇縫": { text: "眼皮微合，眼裂變窄。<br/><span class='text-amber-600 text-base'>narrowed eyes (adj.)</span>", icon: "😑" },
-            "不約而同": { text: "沒有事先商量，彼此的意見或行動卻一致。<br/><span class='text-amber-600 text-base'>spontaneously (adv.)</span>", icon: "🤝" }
+            "機敏": { text: "反應迅速，聰明靈活。<br/><span class='text-amber-700 text-lg md:text-2xl font-bold mt-2 block'>smart (adj.)</span>", icon: "🧠" },
+            "朦朧": { text: "物體的樣子模糊，看不清楚。<br/><span class='text-amber-700 text-lg md:text-2xl font-bold mt-2 block'>hazy (adj.)</span>", icon: "🌫️" },
+            "躥出": { text: "突然快速地跳出來。<br/><span class='text-amber-700 text-lg md:text-2xl font-bold mt-2 block'>jump out (v.)</span>", icon: "🐆" },
+            "懊喪": { text: "因為事情做不好而感到後悔、沮喪。<br/><span class='text-amber-700 text-lg md:text-2xl font-bold mt-2 block'>regretful (adj.)</span>", icon: "😞" },
+            "左盼右盼": { text: "向左看，向右看。形容到處觀察。<br/><span class='text-amber-700 text-lg md:text-2xl font-bold mt-2 block'>looking around (v.)</span>", icon: "👀" },
+            "怏怏": { text: "心裡不高興、不滿意的樣子。<br/><span class='text-amber-700 text-lg md:text-2xl font-bold mt-2 block'>unhappy (adj.)</span>", icon: "😒" },
+            "累贅": { text: "多餘、麻煩，會拖累人的事物。<br/><span class='text-amber-700 text-lg md:text-2xl font-bold mt-2 block'>burden (n.)</span>", icon: "🎒" },
+            "譴責": { text: "嚴厲地批評、指責別人的過錯。<br/><span class='text-amber-700 text-lg md:text-2xl font-bold mt-2 block'>reprimand (v.)</span>", icon: "🗣️" },
+            "佼佼者": { text: "在同類中表現最突出、最優秀的人。<br/><span class='text-amber-700 text-lg md:text-2xl font-bold mt-2 block'>outstanding (adj./n.)</span>", icon: "🥇" },
+            "吃虧": { text: "受到損失，或在某方面處於劣勢。<br/><span class='text-amber-700 text-lg md:text-2xl font-bold mt-2 block'>suffer a loss (v.)</span>", icon: "📉" },
+            "風馳電掣": { text: "速度非常快，像風吹和閃電一樣。<br/><span class='text-amber-700 text-lg md:text-2xl font-bold mt-2 block'>fast (adj.)</span>", icon: "🏎️" },
+            "歪歪扭扭": { text: "東西不平直，彎曲傾斜的樣子。<br/><span class='text-amber-700 text-lg md:text-2xl font-bold mt-2 block'>crooked (adj.)</span>", icon: "〰️" },
+            "蜷縮": { text: "身體彎曲縮成一團。<br/><span class='text-amber-700 text-lg md:text-2xl font-bold mt-2 block'>curl up (v.)</span>", icon: "🥶" },
+            "跌跌撞撞": { text: "走路搖晃不穩，好像快跌倒的樣子。<br/><span class='text-amber-700 text-lg md:text-2xl font-bold mt-2 block'>stumbling (adj.)</span>", icon: "🚶‍♂️" },
+            "瞇縫": { text: "眼睛微微閉上，只露出一條細縫。<br/><span class='text-amber-700 text-lg md:text-2xl font-bold mt-2 block'>narrowed eyes (adj./v.)</span>", icon: "😑" },
+            "不約而同": { text: "沒經過商量，大家的想法或行動卻一致。<br/><span class='text-amber-700 text-lg md:text-2xl font-bold mt-2 block'>spontaneously (adv.)</span>", icon: "👯‍♂️" }
         };
 
-        // 為所有出現過的不重複單字準備的部件與部首字典
+        const wordAdvanced = {
+            "機敏": {
+                lego: [ { c1: "機", c1Bg: "bg-red-500", c2: "靈", c2Bg: "bg-blue-500", res: "機靈" }, { c1: "敏", c1Bg: "bg-amber-500", c2: "捷", c2Bg: "bg-emerald-500", res: "敏捷" } ],
+                formula: "[ 機敏的 ] + [ 反應 / 頭腦 / 動作 ]",
+                examples: "機敏的反應、機敏的警犬",
+                wrong: { text: "這張桌子很機敏", reason: "桌子不會動，沒有反應！" },
+                game: { type: 'synonym', q: "哪一個是「機敏」的好朋友（近義詞）？", opts: ['靈活', '遲鈍', '呆板'], ans: '靈活', exp: '答對了！機敏和靈活都代表反應很快。' },
+                sentenceGame: { q: "哪一個最適合用「機敏」來形容？", opts: ["躲開陷阱的警犬 🐕", "停在路邊的汽車 🚗", "慢慢爬行的蝸牛 🐌"], ans: "躲開陷阱的警犬 🐕", exp: "答對了！警犬反應很快很聰明，適合用機敏。" }
+            },
+            "朦朧": {
+                lego: [ { c1: "朦", c1Bg: "bg-red-500", c2: "朧", c2Bg: "bg-blue-500", res: "朦朧" } ],
+                formula: "[ 朦朧的 ] + [ 月色 / 景象 / 記憶 ]",
+                examples: "朦朧的月色、朦朧的燈光",
+                wrong: { text: "朦朧的聲音", reason: "朦朧是形容「看」不清楚，不是「聽」不清楚！" },
+                game: { type: 'antonym', q: "哪一個是「朦朧」的敵人（反義詞）？", opts: ['清晰', '模糊', '迷茫'], ans: '清晰', exp: '太棒了！朦朧是看不清楚，清晰就是看得很清楚。' },
+                sentenceGame: { q: "哪一個最適合用「朦朧」來形容？", opts: ["起大霧看不清的山景 🌫️", "太陽高照的操場 ☀️", "聲音很大的廣播 📢"], ans: "起大霧看不清的山景 🌫️", exp: "答對了！有霧看不清楚的畫面，就是朦朧。" }
+            },
+            "躥出": {
+                lego: [ { c1: "躥", c1Bg: "bg-red-500", c2: "出", c2Bg: "bg-blue-500", res: "躥出" } ],
+                formula: "[ 動物/人 ] + 從某處 + [ 躥出 ]",
+                examples: "野貓從草叢裡躥出",
+                wrong: { text: "大樹從土裡躥出", reason: "大樹長得很慢，躥出是用來形容「突然、快速跳出來」的動作！" },
+                game: { type: 'synonym', q: "哪一個是「躥出」的好朋友（近義詞）？", opts: ['跳出', '走進', '跌倒'], ans: '跳出', exp: '正確！躥出就是突然快速跳出來的意思。' },
+                sentenceGame: { q: "哪一個最適合用「躥出」？", opts: ["一隻野貓突然從草叢裡跳出來 🐈💨", "一隻烏龜慢慢在牆上爬 🐢", "一架飛機在天上飛 ✈️"], ans: "一隻野貓突然從草叢裡跳出來 🐈💨", exp: "答對了！野貓突然快速跳出來，就是躥出。" }
+            },
+            "懊喪": {
+                lego: [ { c1: "懊", c1Bg: "bg-red-500", c2: "悔", c2Bg: "bg-blue-500", res: "懊悔" }, { c1: "沮", c1Bg: "bg-amber-500", c2: "喪", c2Bg: "bg-emerald-500", res: "沮喪" } ],
+                formula: "[ 感到/滿臉 ] + [ 懊喪 ]",
+                examples: "感到非常懊喪、滿臉懊喪",
+                wrong: { text: "他懊喪地笑了", reason: "懊喪是很傷心後悔的，不會笑出來喔！" },
+                game: { type: 'synonym', q: "哪一個是「懊喪」的好朋友（近義詞）？", opts: ['沮喪', '興奮', '開心'], ans: '沮喪', exp: '太棒了！懊喪和沮喪都是心裡很難過、很灰心。' },
+                sentenceGame: { q: "哪一個最適合用「懊喪」來形容？", opts: ["比賽輸了低著頭嘆氣的球員 😞", "考了一百分跳起來的學生 💯", "在海邊安靜看書的人 📖"], ans: "比賽輸了低著頭嘆氣的球員 😞", exp: "答對了！比賽輸了覺得後悔又難過，就是懊喪。" }
+            },
+            "左盼右盼": {
+                lego: [ { c1: "左", c1Bg: "bg-red-500", c2: "右", c2Bg: "bg-blue-500", res: "左右" }, { c1: "期", c1Bg: "bg-amber-500", c2: "盼", c2Bg: "bg-emerald-500", res: "期盼" } ],
+                formula: "[ 焦急/好奇地 ] + [ 左盼右盼 ]",
+                examples: "在車站左盼右盼、好奇地左盼右盼",
+                wrong: { text: "他閉著眼睛左盼右盼", reason: "盼是用眼睛看，閉著眼睛不能盼喔！" },
+                game: { type: 'synonym', q: "哪一個是「左盼右盼」的好朋友（近義詞）？", opts: ['東張西望', '目不轉睛', '閉目養神'], ans: '東張西望', exp: '對了！左盼右盼和東張西望都是頭轉來轉去到處看！' },
+                sentenceGame: { q: "哪一個最適合用「左盼右盼」來形容？", opts: ["在車站著急等朋友來的人 👀🔄", "在電影院專心看電影的人 🍿", "在床上蓋著被子睡覺的人 🛏️"], ans: "在車站著急等朋友來的人 👀🔄", exp: "答對了！等人時會一直看左看右，就是左盼右盼。" }
+            },
+            "怏怏": {
+                lego: [ { c1: "怏", c1Bg: "bg-red-500", c2: "怏", c2Bg: "bg-blue-500", c3: "不", c3Bg: "bg-amber-500", c4: "樂", c4Bg:"bg-purple-500", res: "怏怏不樂" } ],
+                formula: "[ 怏怏地 ] + [ 離開/答應 ]",
+                examples: "怏怏地離開、怏怏不樂",
+                wrong: { text: "他怏怏地大笑", reason: "怏怏是很不高興的樣子，不會大笑。" },
+                game: { type: 'synonym', q: "哪一個是「怏怏」的好朋友（近義詞）？", opts: ['不滿', '痛快', '興奮'], ans: '不滿', exp: '答對了！怏怏就是心裡覺得不滿意、不高興。' },
+                sentenceGame: { q: "哪一個最適合用「怏怏」來形容？", opts: ["因為不能去遊樂園而扁著嘴的小孩 😒", "收到生日禮物大笑的女孩 🎁", "在操場上開心奔跑的男孩 🏃‍♂️"], ans: "因為不能去遊樂園而扁著嘴的小孩 😒", exp: "答對了！心裡不高興、扁著嘴的樣子就是怏怏。" }
+            },
+            "累贅": {
+                lego: [ { c1: "拖", c1Bg: "bg-red-500", c2: "累", c2Bg: "bg-blue-500", res: "拖累" }, { c1: "累", c1Bg: "bg-amber-500", c2: "贅", c2Bg: "bg-purple-500", res: "累贅" } ],
+                formula: "[ 成為/覺得 ] + [ 累贅 ]",
+                examples: "帶太多行李是個累贅、成為別人的累贅",
+                wrong: { text: "這份禮物很累贅", reason: "禮物是好意，累贅是用來形容多餘、讓人覺得麻煩的東西。" },
+                game: { type: 'synonym', q: "哪一個是「累贅」的好朋友（近義詞）？", opts: ['負擔', '幫助', '幫手'], ans: '負擔', exp: '答對了！累贅和負擔都是會拖累人的東西。' },
+                sentenceGame: { q: "哪一個最適合被稱為「累贅」？", opts: ["去行山卻帶了一堆沉重的石頭 🎒🪨", "一把下雨天剛好用上的雨傘 ☂️", "一件冬天保暖的外套 🧥"], ans: "去行山卻帶了一堆沉重的石頭 🎒🪨", exp: "答對了！沒用又很重的東西，就是累贅。" }
+            },
+            "譴責": {
+                lego: [ { c1: "責", c1Bg: "bg-red-500", c2: "備", c2Bg: "bg-blue-500", res: "責備" } ],
+                formula: "[ 嚴厲地 ] + [ 譴責 ] + [ 壞行為 ]",
+                examples: "嚴厲譴責暴力行為、受到社會譴責",
+                wrong: { text: "老師譴責他考了一百分", reason: "考一百分是好事，譴責是用在罵別人做「錯事」！" },
+                game: { type: 'synonym', q: "哪一個是「譴責」的好朋友（近義詞）？", opts: ['批評', '讚賞', '鼓勵'], ans: '批評', exp: '沒錯！譴責是很嚴厲的批評。' },
+                sentenceGame: { q: "哪一個最適合用「譴責」？", opts: ["大家嚴厲批評隨地亂丟垃圾的行為 🗣️😠", "老師稱讚考了一百分的同學 👍", "媽媽溫柔地哄小寶寶睡覺 🤱"], ans: "大家嚴厲批評隨地亂丟垃圾的行為 🗣️😠", exp: "答對了！譴責就是嚴厲批評壞行為。" }
+            },
+            "佼佼者": {
+                lego: [ { c1: "佼", c1Bg: "bg-red-500", c2: "佼", c2Bg: "bg-blue-500", c3: "者", c3Bg: "bg-amber-500", res: "佼佼者" } ],
+                formula: "[ 某個領域的 ] + [ 佼佼者 ]",
+                examples: "班上的佼佼者、業界的佼佼者",
+                wrong: { text: "這塊石頭是佼佼者", reason: "佼佼者專門用來形容「最優秀的人」，不能形容普通的死物！" },
+                game: { type: 'synonym', q: "哪一個是「佼佼者」的好朋友（近義詞）？", opts: ['傑出人才', '無名小卒', '失敗者'], ans: '傑出人才', exp: '對了！佼佼者就是在大家之中最優秀的人。' },
+                sentenceGame: { q: "哪一個最適合被稱為「佼佼者」？", opts: ["在全校跑步比賽中拿第一名的冠軍 🥇🏃‍♂️", "考試總是最後一名的學生 📝", "坐在觀眾席看比賽的人 👏"], ans: "在全校跑步比賽中拿第一名的冠軍 🥇🏃‍♂️", exp: "答對了！拿第一名最優秀的人，就是佼佼者。" }
+            },
+            "吃虧": {
+                lego: [ { c1: "吃", c1Bg: "bg-red-500", c2: "虧", c2Bg: "bg-blue-500", res: "吃虧" } ],
+                formula: "[ 怕/不想/會 ] + [ 吃虧 ]",
+                examples: "怕吃虧、吃虧上當",
+                wrong: { text: "他吃虧了一個漢堡", reason: "吃虧不是真的吃東西！是代表受到損失。" },
+                game: { type: 'synonym', q: "哪一個是「吃虧」的好朋友（近義詞）？", opts: ['受損', '佔便宜', '得利'], ans: '受損', exp: '答對了！吃虧就是受到損失。' },
+                sentenceGame: { q: "哪一個情況是「吃虧」？", opts: ["買東西被騙，付了比較多的錢 📉💸", "在地上幸運地撿到一百蚊 💵", "買一送一時買到了東西 🛍️"], ans: "買東西被騙，付了比較多的錢 📉💸", exp: "答對了！損失了錢，就是吃虧。" }
+            },
+            "風馳電掣": {
+                lego: [ { c1: "風", c1Bg: "bg-red-500", c2: "馳", c2Bg: "bg-blue-500", c3: "電", c3Bg: "bg-amber-500", c4: "掣", c4Bg:"bg-purple-500", res: "風馳電掣" } ],
+                formula: "[ 像/以 ] + [ 風馳電掣般的速度 ]",
+                examples: "賽車風馳電掣般駛過",
+                wrong: { text: "蝸牛風馳電掣地爬", reason: "蝸牛很慢！風馳電掣是形容像風和閃電一樣超級快。" },
+                game: { type: 'synonym', q: "哪一個是「風馳電掣」的好朋友（近義詞）？", opts: ['快如閃電', '慢條斯理', '停滯不前'], ans: '快如閃電', exp: '沒錯！兩個詞都是形容速度極快。' },
+                sentenceGame: { q: "哪一個最適合用「風馳電掣」來形容？", opts: ["賽車在跑道上高速飆過 🏎️⚡", "一隻烏龜在草地上慢慢爬 🐢", "一個人悠閒地散步 🚶‍♂️"], ans: "賽車在跑道上高速飆過 🏎️⚡", exp: "答對了！賽車速度超快，就像風馳電掣。" }
+            },
+            "歪歪扭扭": {
+                lego: [ { c1: "歪", c1Bg: "bg-red-500", c2: "歪", c2Bg: "bg-blue-500", c3: "斜", c3Bg: "bg-amber-500", c4: "斜", c4Bg:"bg-purple-500", res: "歪歪斜斜" } ],
+                formula: "[ 字體/線條/走路 ] + [ 歪歪扭扭 ]",
+                examples: "字寫得歪歪扭扭、歪歪扭扭的小路",
+                wrong: { text: "他站得歪歪扭扭", reason: "站得不直可以說東倒西歪，歪歪扭扭通常形容線條或字體彎曲不直。" },
+                game: { type: 'antonym', q: "哪一個是「歪歪扭扭」的敵人（反義詞）？", opts: ['端正平直', '東倒西歪', '彎彎曲曲'], ans: '端正平直', exp: '對了！歪歪扭扭是彎曲不直，端正平直就是完全相反的意思。' },
+                sentenceGame: { q: "哪一個最適合用「歪歪扭扭」來形容？", opts: ["剛學寫字的小朋友寫出來的字 〰️✏️", "用間尺畫出來的直線 📏", "站得直直的儀仗隊 💂‍♂️"], ans: "剛學寫字的小朋友寫出來的字 〰️✏️", exp: "答對了！初學寫字容易彎彎曲曲的，就是歪歪扭扭。" }
+            },
+            "蜷縮": {
+                lego: [ { c1: "蜷", c1Bg: "bg-red-500", c2: "伏", c2Bg: "bg-blue-500", res: "蜷伏" }, { c1: "退", c1Bg: "bg-amber-500", c2: "縮", c2Bg: "bg-purple-500", res: "退縮" } ],
+                formula: "[ 蜷縮著 ] + [ 身體 ]",
+                examples: "冷得蜷縮在角落",
+                wrong: { text: "大樹蜷縮在公園裡", reason: "大樹不能彎曲身體！蜷縮是用來形容人或動物彎起身體。" },
+                game: { type: 'synonym', q: "哪一個是「蜷縮」的好朋友（近義詞）？", opts: ['捲縮', '伸展', '舒展'], ans: '捲縮', exp: '答對了！蜷縮就是把身體捲起來。' },
+                sentenceGame: { q: "哪一個最適合用「蜷縮」來形容？", opts: ["覺得很冷，把身體縮成一團的小貓 🥶🐈", "剛睡醒在床上伸懶腰的人 🥱", "站在台上大聲說話的校長 🎤"], ans: "覺得很冷，把身體縮成一團的小貓 🥶🐈", exp: "答對了！貓咪覺得冷把身體捲起來，這動作就是蜷縮。" }
+            },
+            "跌跌撞撞": {
+                lego: [ { c1: "跌", c1Bg: "bg-red-500", c2: "倒", c2Bg: "bg-blue-500", res: "跌倒" }, { c1: "碰", c1Bg: "bg-amber-500", c2: "撞", c2Bg: "bg-purple-500", res: "碰撞" } ],
+                formula: "[ 跌跌撞撞地 ] + [ 走路/跑 ]",
+                examples: "跌跌撞撞地走著",
+                wrong: { text: "他跌跌撞撞地坐著", reason: "坐著不會跌撞，這是形容走路不穩！" },
+                game: { type: 'antonym', q: "哪一個是「跌跌撞撞」的敵人（反義詞）？", opts: ['穩穩當當', '搖搖晃晃', '東倒西歪'], ans: '穩穩當當', exp: '沒錯！跌跌撞撞是走路不穩，穩穩當當就是走得很穩。' },
+                sentenceGame: { q: "哪一個最適合用「跌跌撞撞」來形容？", opts: ["剛學走路，不穩快跌倒的嬰兒 👶💥", "在田徑場上飛快跑步的運動員 🏃‍♂️", "坐得筆直的小學生 🪑"], ans: "剛學走路，不穩快跌倒的嬰兒 👶💥", exp: "答對了！走路搖晃不穩的樣子就是跌跌撞撞。" }
+            },
+            "瞇縫": {
+                lego: [ { c1: "細", c1Bg: "bg-red-500", c2: "縫", c2Bg: "bg-blue-500", res: "細縫" } ],
+                formula: "[ 瞇縫著 ] + [ 眼睛 ]",
+                examples: "瞇縫著眼睛看",
+                wrong: { text: "他瞇縫著嘴巴", reason: "瞇縫專門用來形容眼睛半閉，不能用來形容嘴巴喔！" },
+                game: { type: 'synonym', q: "哪一個是「瞇縫」的好朋友（近義詞）？", opts: ['微閉', '睜大', '瞪眼'], ans: '微閉', exp: '答對了！瞇縫就是眼睛微微閉起來。' },
+                sentenceGame: { q: "哪一個最適合用「瞇縫」來形容？", opts: ["太陽太大，把眼睛微微閉起來看東西 😑☀️", "看到驚喜禮物，眼睛睜得大大的 😲🎁", "睡覺時把眼睛完全閉上 😴"], ans: "太陽太大，把眼睛微微閉起來看東西 😑☀️", exp: "答對了！眼睛微微閉成一條縫，就是瞇縫。" }
+            },
+            "不約而同": {
+                lego: [ { c1: "不", c1Bg: "bg-red-500", c2: "約", c2Bg: "bg-blue-500", c3: "而", c3Bg: "bg-amber-500", c4: "同", c4Bg:"bg-purple-500", res: "不約而同" } ],
+                formula: "[ 大家 ] + [ 不約而同地 ] + [ 動作 ]",
+                examples: "大家不約而同地笑了",
+                wrong: { text: "我一個人不約而同地吃飯", reason: "不約而同必須是「多個人」一起做出同樣的反應！" },
+                game: { type: 'synonym', q: "哪一個是「不約而同」的好朋友（近義詞）？", opts: ['不謀而合', '各行其是', '眾說紛紜'], ans: '不謀而合', exp: '對了！大家沒商量但想法或動作一樣。' },
+                sentenceGame: { q: "哪一個最適合用「不約而同」來形容？", opts: ["看到精彩的表演，全場觀眾一起拍手 👏🤩", "同學們下課後各自回家 🏠", "兩個人意見不一樣在吵架 🗣️"], ans: "看到精彩的表演，全場觀眾一起拍手 👏🤩", exp: "答對了！大家沒有商量好，卻同時拍手，就是不約而同。" }
+            }
+        };
+
         const dict = {
-            "機": {"radical": "木", "components": "木、幾"},
-            "敏": {"radical": "攴 (攵)", "components": "每、攵"},
-            "朦": {"radical": "肉 (月)", "components": "月、蒙"},
-            "朧": {"radical": "肉 (月)", "components": "月、龍"},
-            "躥": {"radical": "足", "components": "足、竄"},
-            "出": {"radical": "凵", "components": "屮、凵"},
-            "懊": {"radical": "心 (忄)", "components": "忄、奧"},
-            "喪": {"radical": "口", "components": "十、口、𧘇"},
-            "左": {"radical": "工", "components": "𠂇、工"},
-            "盼": {"radical": "目", "components": "目、分"},
-            "右": {"radical": "口", "components": "𠂇、口"},
-            "怏": {"radical": "心 (忄)", "components": "忄、央"},
-            "累": {"radical": "糸", "components": "田、糸"},
-            "贅": {"radical": "貝", "components": "敖、貝"},
-            "譴": {"radical": "言", "components": "言、遣"},
-            "責": {"radical": "貝", "components": "龶、貝"},
-            "佼": {"radical": "人 (亻)", "components": "亻、交"},
-            "者": {"radical": "老", "components": "老、日"},
-            "吃": {"radical": "口", "components": "口、乞"},
-            "虧": {"radical": "虍", "components": "虍、隹、亏"},
-            "風": {"radical": "風", "components": "凡、虫"},
-            "馳": {"radical": "馬", "components": "馬、也"},
-            "電": {"radical": "雨", "components": "雨、申"},
-            "掣": {"radical": "手", "components": "制、手"},
-            "歪": {"radical": "止", "components": "不、正"},
-            "扭": {"radical": "手 (扌)", "components": "扌、丑"},
-            "蜷": {"radical": "虫", "components": "虫、卷"},
-            "縮": {"radical": "糸 (糹)", "components": "糹、宿"},
-            "跌": {"radical": "足", "components": "足、失"},
-            "撞": {"radical": "手 (扌)", "components": "扌、童"},
-            "瞇": {"radical": "目", "components": "目、迷"},
-            "縫": {"radical": "糸 (糹)", "components": "糹、逢"},
-            "不": {"radical": "一", "components": "一、丿、丨"},
-            "約": {"radical": "糸 (糹)", "components": "糹、勺"},
-            "而": {"radical": "而", "components": "而"},
-            "同": {"radical": "口", "components": "冂、一、口"}
+            "機": {"radical": "木", "components": ["木", "幾"], "hint": "右邊是「幾」，下面是人不是水，代表靈巧的機器！"},
+            "敏": {"radical": "攴 (攵)", "components": ["每", "攵"], "hint": "右邊是「攵」(攴部)，代表有動作，千萬不要寫成「文」！"},
+            "朦": {"radical": "月", "components": ["月", "蒙"], "hint": "左邊是「月」(肉部)，通常跟朦朧的月色有關。"},
+            "朧": {"radical": "月", "components": ["月", "龍"], "hint": "左邊是「月」，右邊是代表龍的「龍」。"},
+            "躥": {"radical": "足", "components": ["足", "竄"], "hint": "左邊是「足」，代表腳的動作，右邊是「竄」。"},
+            "出": {"radical": "凵", "components": ["屮", "凵"], "hint": "像一棵草從凹陷的洞裡長「出」來。"},
+            "懊": {"radical": "心 (忄)", "components": ["忄", "奧"], "hint": "左邊是「忄」(心)，表示心裡後悔，右邊是深奧的「奧」。"},
+            "喪": {"radical": "口", "components": ["哭", "亡"], "hint": "上面像兩個「口」在哭泣，下面沒有「衣」喔！"},
+            "左": {"radical": "工", "components": ["𠂇", "工"], "hint": "左手拿著工具(工)。"},
+            "盼": {"radical": "目", "components": ["目", "分"], "hint": "左邊是「目」(眼睛)，用眼睛看就是盼！千萬不要寫成「日」。"},
+            "右": {"radical": "口", "components": ["𠂇", "口"], "hint": "右手拿著食物放進嘴巴(口)。"},
+            "怏": {"radical": "心 (忄)", "components": ["忄", "央"], "hint": "左邊是「忄」(心部)，心裡不高興，右邊是中央的「央」。"},
+            "累": {"radical": "糸 (糹)", "components": ["田", "糸"], "hint": "上面是「田」，下面是「糸」，就像用很多繩子把田裡的農作物綁起來，很重！"},
+            "贅": {"radical": "貝", "components": ["敖", "貝"], "hint": "下面是「貝」(錢財)，多出來的負擔。"},
+            "譴": {"radical": "言 (訁)", "components": ["訁", "遣"], "hint": "左邊是「訁」(言部)，用言語來嚴厲責備。"},
+            "責": {"radical": "貝", "components": ["朿", "貝"], "hint": "下面是「貝」，上面不是「青」喔！"},
+            "佼": {"radical": "人 (亻)", "components": ["亻", "交"], "hint": "左邊是「亻」(人)，非常優秀的人。"},
+            "者": {"radical": "老", "components": ["老", "日"], "hint": "上面是「老」的一半，下面是「日」。"},
+            "吃": {"radical": "口", "components": ["口", "乞"], "hint": "左邊是「口」，吃東西要用嘴巴。"},
+            "虧": {"radical": "虍", "components": ["虍", "隹", "亏"], "hint": "上面是「虍」(虎字頭)，像被老虎咬了一口，受到損失。"},
+            "風": {"radical": "風", "components": ["几", "虫"], "hint": "裡面是一個「虫」，古人認為風會帶來蟲子。"},
+            "馳": {"radical": "馬", "components": ["馬", "也"], "hint": "左邊是「馬」，馬跑得很快。"},
+            "電": {"radical": "雨", "components": ["雨", "乚"], "hint": "上面是「雨」，閃電常在下雨時出現。"},
+            "掣": {"radical": "手", "components": ["制", "手"], "hint": "下面是「手」，用力拉扯。"},
+            "歪": {"radical": "止", "components": ["不", "正"], "hint": "上面是「不」，下面是「正」，「不正」就是歪！"},
+            "扭": {"radical": "手 (扌)", "components": ["扌", "丑"], "hint": "左邊是「扌」(手部)，用手去扭轉。"},
+            "蜷": {"radical": "虫", "components": ["虫", "卷"], "hint": "左邊是「虫」，像蟲子一樣把身體捲起來。"},
+            "縮": {"radical": "糸 (糹)", "components": ["糹", "宿"], "hint": "左邊是「糹」(絲線)，像絲線一樣縮短。"},
+            "跌": {"radical": "足", "components": ["足", "失"], "hint": "左邊是「足」(腳)，腳「失」去平衡就跌倒了！"},
+            "撞": {"radical": "手 (扌)", "components": ["扌", "童"], "hint": "左邊是「扌」，用力撞擊。"},
+            "瞇": {"radical": "目", "components": ["目", "迷"], "hint": "左邊是「目」(眼睛)，眼睛瞇起來。"},
+            "縫": {"radical": "糸 (糹)", "components": ["糹", "逢"], "hint": "左邊是「糹」，用線把布連起來。"},
+            "不": {"radical": "一", "components": ["不"], "hint": "像鳥飛向天空不下來。"},
+            "約": {"radical": "糸 (糹)", "components": ["糹", "勺"], "hint": "左邊是「糹」，用繩子綁起來做約定。"},
+            "而": {"radical": "而", "components": ["而"], "hint": "這是一個象形字，長得像男人的鬍鬚。"},
+            "同": {"radical": "口", "components": ["冂", "一", "口"], "hint": "所有人(口)都在同一個框框(冂)裡。"}
         };
 
-        // 常見干擾部首庫 (用於選擇題，已擴充以包含此次字彙部首)
         const commonRadicals = [
             "口", "力", "足", "大", "艸", "示", "心", "田", "一", "网", "見", "糸", "水", 
             "土", "車", "山", "火", "頁", "竹", "日", "手", "風", "馬", "雨", "女", "木", 
             "人", "言", "金", "广", "白", "十", "止", "尸", "走", "穴", "皿", "宀", "凵", "干",
             "几", "方", "勹", "衣", "黑", "儿", "乙", "自", "刀", "夕", "貝", "疒", "面", "亠", "隹",
             "虍", "耳", "目", "豸", "斤", "米", "禾", "彳", "卩", "又", "飛", "舛", "魚", "石", "生", "犬", "羽",
-            "厂", "小", "欠", "戈", "攴", "辵", "殳", "角", "龍", "厶", "肉", "身", "工", "老", "虫", "月"
+            "厂", "小", "欠", "戈", "攴", "辵", "殳", "角", "龍", "厶", "肉", "身", "工", "老", "虫", "月",
+            "門", "隶", "八", "艮", "阜", "鬥", "髟", "舟", "丿", "寸", "臼", "玉", "廴", "彡", "鹿", "士", "弓", "立", "囗", "色", "木", "攴", "月", "凵", "心", "言", "老"
         ];
 
-        let writer;
-        let activeWordBtn = null;
-        let globalScore = 0;
+        // ==========================================
+        // 4. 核心系統函數
+        // ==========================================
+        window.preloadCharacterData = function(word) {
+            [...word].forEach(char => {
+                if (!window.charDataCache[char]) {
+                    fetch(`https://cdn.jsdelivr.net/npm/hanzi-writer-data-tc@1.0.1/${char}.json`)
+                        .then(res => res.ok ? res.json() : fetch(`https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${char}.json`).then(r => r.json()))
+                        .then(data => { window.charDataCache[char] = data; })
+                        .catch(e => console.log('Preload skipped for', char));
+                }
+            });
+        };
 
-        function init() {
+        window.showVisualIntro = function(word) {
+            window.currentWord = word;
+            window.preloadCharacterData(word);
+            
+            const intro = wordIntros[word] || { icon: "❓", anim: "anim-pulse", ctx: "💡 提示：這個詞語非常特別。", q: "🤔 這是什麼詞彙？" };
+            
+            document.getElementById('intro-visual').textContent = intro.icon;
+            document.getElementById('intro-visual').className = `text-8xl md:text-9xl my-6 md:my-10 filter drop-shadow-xl ${intro.anim}`;
+            
+            const ctxEl = document.getElementById('intro-context');
+            ctxEl.innerHTML = `<div class="flex flex-col items-center justify-center gap-3 w-full">
+                <span class="text-xl md:text-3xl text-gray-800 font-bold leading-relaxed">${intro.ctx}</span>
+                <button onclick="window.speakText('${intro.ctx.replace(/'/g, "\\'")}', event)" class="tts-btn inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 shadow-sm focus:outline-none opacity-80 hover:opacity-100" title="朗讀">🗣️</button>
+            </div>`;
+            
+            document.getElementById('intro-question').innerHTML = `<div class="flex items-center justify-center gap-3 w-full">
+                <span class="text-2xl md:text-4xl">${intro.q}</span>
+                <button onclick="window.speakText('${intro.q.replace(/'/g, "\\'")}', event)" class="tts-btn inline-flex items-center justify-center w-10 h-10 rounded-full bg-teal-100 text-teal-600 hover:bg-teal-200 shadow-sm focus:outline-none opacity-80 hover:opacity-100" title="朗讀">🗣️</button>
+            </div>`;
+            
+            document.getElementById('learning-section').classList.add('hidden');
+            document.getElementById('intro-section').classList.remove('hidden');
+            
+            const introSect = document.getElementById('intro-section');
+            introSect.classList.remove('fade-in-up');
+            void introSect.offsetWidth;
+            introSect.classList.add('fade-in-up');
+        };
+
+        window.filterDifficulty = function(level, btn) {
+            window.currentFilter = level;
+            document.querySelectorAll('.diff-btn').forEach(b => {
+                b.classList.remove('bg-amber-200', 'text-amber-900', 'border-amber-300', 'shadow-sm');
+                b.classList.add('text-gray-500', 'border-transparent');
+            });
+            btn.classList.add('bg-amber-200', 'text-amber-900', 'border-amber-300', 'shadow-sm');
+            btn.classList.remove('text-gray-500', 'border-transparent');
+            
+            window.renderWordList();
+        };
+
+        window.renderWordList = function() {
             const listContainer = document.getElementById('word-list');
-            words.forEach((word, index) => {
+            listContainer.innerHTML = '';
+            
+            const filteredWords = window.currentFilter === 'all' ? wordDataList : wordDataList.filter(w => w.level === window.currentFilter);
+            
+            if (window.activeWordBtn && window.activeWordBtn.parentNode) {
+                window.activeWordBtn.classList.remove('bg-amber-200', 'border-amber-600', 'shadow-sm');
+                window.activeWordBtn = null;
+            }
+
+            filteredWords.forEach((item, index) => {
                 const li = document.createElement('li');
                 li.className = 'flex-shrink-0 lg:w-full'; 
                 
                 const btn = document.createElement('button');
-                btn.className = 'w-full whitespace-nowrap lg:whitespace-normal text-center lg:text-left px-5 py-2 lg:py-3 rounded-xl text-base lg:text-lg font-bold text-amber-900 transition-all hover:bg-amber-100 hover:scale-[1.02] focus:outline-none border-2 border-transparent';
-                btn.textContent = word;
+                btn.className = 'w-full whitespace-nowrap lg:whitespace-normal text-center lg:text-left px-4 py-2 lg:py-3 rounded-xl text-base lg:text-lg font-bold text-amber-900 transition-all hover:bg-amber-100 hover:scale-[1.02] focus:outline-none border-2 border-transparent flex justify-between items-center';
+                
+                let stars = '';
+                for(let i=0; i<item.level; i++) stars += '⭐';
+                btn.innerHTML = `<span>${item.word}</span> <span class="text-xs opacity-70">${stars}</span>`;
+                
                 btn.onclick = () => {
-                    if(activeWordBtn) {
-                        activeWordBtn.classList.remove('bg-amber-200', 'border-amber-600', 'shadow-sm');
+                    window.playSound('pop');
+                    if(window.activeWordBtn) {
+                        window.activeWordBtn.classList.remove('bg-amber-200', 'border-amber-600', 'shadow-sm');
                     }
                     btn.classList.add('bg-amber-200', 'border-amber-600', 'shadow-sm');
-                    activeWordBtn = btn;
-                    selectWord(word);
+                    window.activeWordBtn = btn;
+                    window.showVisualIntro(item.word);
                 };
                 li.appendChild(btn);
                 listContainer.appendChild(li);
 
-                if(index === 0) btn.click();
+                if(index === 0) setTimeout(() => btn.click(), 50);
             });
-        }
+        };
 
-        function selectWord(word) {
+        window.checkSentence = function(btn, option, answer, feedbackText) {
+            if (btn.disabled) return;
+            const container = document.getElementById('sentence-options');
+            const feedback = document.getElementById('sentence-feedback');
+            const iconSpan = btn.querySelector('.icon-span');
+
+            if (option === answer) {
+                window.playSound('correct');
+                window.updateCombo(true);
+                if (!window.completedTasks.has(`sentence_${window.currentWord}`)) {
+                    window.completedTasks.add(`sentence_${window.currentWord}`);
+                    window.addScore(1);
+                    feedback.innerHTML = `✨ ${feedbackText} <span class="text-yellow-500 float-right">⭐ +1</span>`;
+                } else {
+                    feedback.innerHTML = `✨ ${feedbackText}`;
+                }
+
+                window.showCheer();
+                if(iconSpan) iconSpan.textContent = '✅';
+                btn.className = "w-full text-left px-4 py-3 md:px-6 md:py-5 bg-emerald-500 text-white font-bold rounded-xl shadow-md text-lg md:text-2xl pop transition-all border-2 border-emerald-600 flex items-center gap-2 md:gap-4";
+                feedback.className = "mt-4 md:mt-5 text-lg md:text-2xl font-bold p-4 md:p-5 rounded-xl border-2 border-emerald-300 bg-emerald-100 text-emerald-900 pop transition-all block shadow-sm";
+
+                Array.from(container.children).forEach(child => {
+                    child.disabled = true;
+                    if(child !== btn) {
+                        child.className = "w-full text-left px-4 py-3 md:px-6 md:py-5 bg-gray-200 text-gray-400 font-bold rounded-xl text-lg md:text-2xl transition-all opacity-50 cursor-not-allowed flex items-center gap-2 md:gap-4";
+                    }
+                });
+            } else {
+                window.playSound('wrong');
+                window.updateCombo(false);
+                if(iconSpan) iconSpan.textContent = '❌';
+                btn.className = "w-full text-left px-4 py-3 md:px-6 md:py-5 bg-gray-200 text-gray-400 font-bold rounded-xl text-lg md:text-2xl shake transition-all opacity-50 cursor-not-allowed flex items-center gap-2 md:gap-4";
+                btn.disabled = true;
+                
+                window.sentenceAttemptCount++;
+                
+                if (window.sentenceAttemptCount === 1) {
+                    let hiddenOne = false;
+                    Array.from(container.children).forEach(child => {
+                        const childOpt = child.getAttribute('data-opt');
+                        if (childOpt !== answer && childOpt !== option && !hiddenOne) {
+                            child.classList.add('opacity-20', 'pointer-events-none');
+                            hiddenOne = true;
+                        }
+                        if (childOpt === answer) {
+                            child.classList.add('border-4', 'border-emerald-400');
+                            const emojiSpan = child.querySelector('.sentence-emoji');
+                            if(emojiSpan) emojiSpan.classList.add('scale-150', 'animate-bounce', 'transform', 'origin-right');
+                        }
+                    });
+                    feedback.innerHTML = `🤔 不太對喔，我幫你刪掉一個錯誤選項，再看清楚提示試試看！`;
+                    feedback.className = "mt-4 md:mt-5 text-lg md:text-xl font-bold p-4 md:p-5 rounded-xl border-2 border-amber-300 bg-amber-50 text-amber-800 transition-all block shadow-sm pop";
+                } else {
+                    feedback.innerHTML = `🤔 還是不對喔，答案就在剩下的選項裡！`;
+                    feedback.className = "mt-4 md:mt-5 text-lg md:text-xl font-bold p-4 md:p-5 rounded-xl border-2 border-red-300 bg-red-50 text-red-800 transition-all block";
+                }
+            }
+        };
+
+        window.checkSemantic = function(btn, option, answer, feedbackText) {
+            if (btn.disabled) return;
+            const container = document.getElementById('semantic-options');
+            const feedback = document.getElementById('semantic-feedback');
+
+            if (option === answer) {
+                window.playSound('correct');
+                window.updateCombo(true);
+                if (!window.completedTasks.has(`semantic_${window.currentWord}`)) {
+                    window.completedTasks.add(`semantic_${window.currentWord}`);
+                    window.addScore(1);
+                    feedback.innerHTML = `✨ ${feedbackText} <span class="text-yellow-500 float-right">⭐ +1</span>`;
+                } else {
+                    feedback.innerHTML = `✨ ${feedbackText}`;
+                }
+                window.showCheer();
+                btn.className = "group flex items-center justify-between gap-2 px-4 py-2 md:px-6 md:py-3 bg-indigo-500 text-white font-bold rounded-xl text-lg md:text-2xl shadow-sm pop transition-all border-2 border-indigo-600 w-full sm:w-auto";
+                feedback.className = "mt-4 md:mt-5 text-lg md:text-2xl font-bold p-4 md:p-5 rounded-xl border-2 border-indigo-300 bg-indigo-100 text-indigo-900 pop transition-all block shadow-sm";
+                Array.from(container.children).forEach(child => {
+                    child.disabled = true;
+                    if(child !== btn) {
+                        child.className = "group flex items-center justify-between gap-2 px-4 py-2 md:px-6 md:py-3 bg-gray-200 text-gray-400 font-bold rounded-xl text-lg md:text-2xl transition-all opacity-50 cursor-not-allowed w-full sm:w-auto";
+                    }
+                });
+            } else {
+                window.playSound('wrong');
+                window.updateCombo(false);
+                btn.className = "group flex items-center justify-between gap-2 px-4 py-2 md:px-6 md:py-3 bg-gray-200 text-gray-400 font-bold rounded-xl text-lg md:text-2xl shake transition-all opacity-50 cursor-not-allowed w-full sm:w-auto";
+                btn.disabled = true;
+                feedback.innerHTML = `🤔 不太對喔，再想想看！`;
+                feedback.className = "mt-4 md:mt-5 text-lg md:text-xl font-bold p-4 md:p-5 rounded-xl border-2 border-red-300 bg-red-50 text-red-800 transition-all block";
+            }
+        };
+
+        window.revealWord = function() {
+            window.playSound('reveal');
+            document.getElementById('intro-section').classList.add('hidden');
+            document.getElementById('learning-section').classList.remove('hidden');
+            
+            const learningSect = document.getElementById('learning-section');
+            learningSect.classList.remove('fade-in-up');
+            void learningSect.offsetWidth;
+            learningSect.classList.add('fade-in-up');
+
+            window.setupLearningArea(window.currentWord);
+        };
+
+        window.renderAdvancedUsage = function(word) {
+            const advContainer = document.getElementById('word-advanced-usage');
+            const data = wordAdvanced[word];
+            window.sentenceAttemptCount = 0; 
+            
+            if (!data) {
+                advContainer.classList.add('hidden');
+                return;
+            }
+
+            let gameHtml = '';
+            if (data.game) {
+                const isSynonym = data.game.type === 'synonym';
+                const badge = isSynonym ? '<span class="bg-indigo-100 text-indigo-800 border border-indigo-300 px-3 py-1 rounded-lg shadow-sm text-sm md:text-xl">🤝 找好朋友 (近義詞)</span>' : '<span class="bg-purple-100 text-purple-800 border border-purple-300 px-3 py-1 rounded-lg shadow-sm text-sm md:text-xl">⚔️ 找敵人 (反義詞)</span>';
+                
+                const buttonsHtml = data.game.opts.map(opt => {
+                    const safeOpt = opt.replace(/'/g, "\\'");
+                    const safeAns = data.game.ans.replace(/'/g, "\\'");
+                    const safeExp = data.game.exp.replace(/'/g, "\\'");
+                    return `<button onclick="window.checkSemantic(this, '${safeOpt}', '${safeAns}', '${safeExp}')" class="group flex items-center justify-between gap-2 px-4 py-2 md:px-6 md:py-3 bg-white border-2 border-indigo-200 text-indigo-700 font-bold rounded-xl text-lg md:text-2xl shadow-sm hover:bg-indigo-50 hover:-translate-y-1 transition-all focus:outline-none w-full sm:w-auto">
+                        <span>${opt}</span>
+                        <div onclick="window.speakText('${safeOpt}', event)" class="tts-btn inline-flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-indigo-100 text-indigo-600 hover:bg-indigo-200 shadow-sm focus:outline-none opacity-80 group-hover:opacity-100 flex-shrink-0" title="朗讀">🗣️</div>
+                    </button>`;
+                }).join('');
+
+                gameHtml = `
+                    <div class="bg-indigo-50/50 rounded-2xl p-5 md:p-8 border-2 border-indigo-200 shadow-sm mt-2 md:mt-4 max-w-4xl mx-auto w-full">
+                        <div class="text-xl md:text-3xl font-bold text-indigo-900 mb-4 md:mb-6 flex items-center gap-3 md:gap-4">
+                            <span>🎯</span> 語義小挑戰 ${badge}
+                        </div>
+                        <div class="text-xl md:text-3xl font-bold text-gray-800 mb-5 md:mb-6 bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-3">
+                            <span>${data.game.q}</span>
+                            <button onclick="window.speakText('${data.game.q.replace(/'/g, "\\'")}', event)" class="tts-btn inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full bg-indigo-100 text-indigo-600 hover:bg-indigo-200 shadow-sm focus:outline-none opacity-80 hover:opacity-100 flex-shrink-0" title="朗讀">🗣️</button>
+                        </div>
+                        <div class="flex flex-col sm:flex-row flex-wrap justify-center md:justify-start gap-3 md:gap-6" id="semantic-options">
+                            ${buttonsHtml}
+                        </div>
+                        <div id="semantic-feedback" class="hidden"></div>
+                    </div>`;
+            }
+
+            let sentenceHtml = '';
+            if (data.sentenceGame) {
+                const buttonsHtml = data.sentenceGame.opts.map(opt => {
+                    const safeOpt = opt.replace(/'/g, "\\'");
+                    const safeAns = data.sentenceGame.ans.replace(/'/g, "\\'");
+                    const safeExp = data.sentenceGame.exp.replace(/'/g, "\\'");
+                    
+                    const lastSpaceIdx = opt.lastIndexOf(' ');
+                    let textPart = opt;
+                    let emojiPart = '';
+                    if (lastSpaceIdx !== -1) {
+                        textPart = opt.substring(0, lastSpaceIdx);
+                        emojiPart = opt.substring(lastSpaceIdx + 1);
+                    }
+
+                    return `<button data-opt="${safeOpt}" onclick="window.checkSentence(this, '${safeOpt}', '${safeAns}', '${safeExp}')" class="group w-full text-left px-4 py-3 md:px-6 md:py-5 bg-white border-2 border-emerald-200 text-emerald-800 font-bold rounded-xl text-lg md:text-2xl shadow-sm hover:bg-emerald-50 hover:-translate-y-1 transition-all focus:outline-none flex items-center gap-2 md:gap-4">
+                        <span class="text-2xl md:text-3xl icon-span pointer-events-none">⚪</span> 
+                        <span class="flex-1 pointer-events-none">${textPart}</span>
+                        <span class="text-3xl md:text-4xl sentence-emoji pointer-events-none transition-all ml-1 md:ml-3">${emojiPart}</span>
+                        <div onclick="window.speakText('${textPart.replace(/'/g, "\\'")}', event)" class="tts-btn inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-200 shadow-sm focus:outline-none opacity-80 group-hover:opacity-100 ml-2 flex-shrink-0" title="朗讀">🗣️</div>
+                    </button>`;
+                }).join('');
+
+                sentenceHtml = `
+                    <div class="bg-emerald-50/50 rounded-2xl p-5 md:p-8 border-2 border-emerald-200 shadow-sm mt-5 md:mt-8 mb-6 md:mb-10 max-w-4xl mx-auto w-full">
+                        <div class="text-xl md:text-3xl font-bold text-emerald-900 mb-4 md:mb-6 flex items-center gap-3 md:gap-4">
+                            <span>📝</span> 觀察與應用 (情境選擇)
+                        </div>
+                        <div class="text-xl md:text-3xl font-bold text-gray-800 mb-5 md:mb-6 bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-3">
+                            <span>${data.sentenceGame.q}</span>
+                            <button onclick="window.speakText('${data.sentenceGame.q.replace(/'/g, "\\'")}', event)" class="tts-btn inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-200 shadow-sm focus:outline-none opacity-80 hover:opacity-100 flex-shrink-0" title="朗讀">🗣️</button>
+                        </div>
+                        <div class="flex flex-col gap-3 md:gap-5" id="sentence-options">
+                            ${buttonsHtml}
+                        </div>
+                        <div id="sentence-feedback" class="hidden"></div>
+                    </div>`;
+            }
+
+            let interactiveHeader = '';
+            if (gameHtml || sentenceHtml) {
+                interactiveHeader = `
+                    <div class="w-full flex items-center justify-center my-4 md:my-6">
+                        <span class="bg-yellow-100 text-yellow-800 px-6 py-3 md:px-10 md:py-4 rounded-full font-bold text-lg md:text-2xl border-2 border-yellow-400 shadow-md animate-pulse whitespace-nowrap">
+                            👇 請完成以下挑戰，賺取星星！⭐
+                        </span>
+                    </div>
+                `;
+            }
+
+            let legoHtml = '';
+            if (data.lego && data.lego.length > 0) {
+                const blocks = data.lego.map(l => {
+                    if (l.c4) {
+                        return `
+                        <div class="flex items-center gap-1 bg-white px-3 md:px-4 py-2 md:py-3 rounded-xl shadow-sm border border-gray-200 text-base md:text-xl">
+                            <span class="${l.c1Bg} lego-block text-white font-bold px-2 py-0.5 md:px-3 md:py-1">${l.c1}</span>
+                            <span class="${l.c2Bg} lego-block text-white font-bold px-2 py-0.5 md:px-3 md:py-1">${l.c2}</span>
+                            <span class="${l.c3Bg} lego-block text-white font-bold px-2 py-0.5 md:px-3 md:py-1">${l.c3}</span>
+                            <span class="${l.c4Bg} lego-block text-white font-bold px-2 py-0.5 md:px-3 md:py-1">${l.c4}</span>
+                            <span class="text-gray-400 mx-1 md:mx-3 text-xl md:text-3xl">👉</span>
+                            <span class="font-bold text-gray-800 text-lg md:text-2xl">${l.res}</span>
+                        </div>`;
+                    }
+                    return `
+                    <div class="flex items-center gap-1 md:gap-3 bg-white px-3 md:px-4 py-2 md:py-3 rounded-xl shadow-sm border border-gray-200 text-base md:text-xl">
+                        <span class="${l.c1Bg} lego-block text-white font-bold px-2 py-0.5 md:px-3 md:py-1">${l.c1}</span>
+                        <span class="text-gray-400 font-bold text-xl md:text-3xl">+</span>
+                        <span class="${l.c2Bg} lego-block text-white font-bold px-2 py-0.5 md:px-3 md:py-1">${l.c2}</span>
+                        <span class="text-gray-400 font-bold text-xl md:text-3xl">=</span>
+                        <span class="font-bold text-gray-800 text-lg md:text-2xl">${l.res}</span>
+                    </div>`;
+                }).join('');
+                
+                legoHtml = `
+                    <div class="mb-6 md:mb-8 max-w-4xl mx-auto w-full">
+                        <div class="text-xl md:text-3xl font-bold text-blue-800 mb-3 md:mb-5 border-l-4 border-blue-500 pl-3 md:pl-4">🧩 把字當積木拼 (解鎖新詞語)</div>
+                        <div class="flex flex-wrap gap-3 md:gap-5">${blocks}</div>
+                    </div>`;
+            }
+
+            const formulaHtml = `
+                <div class="bg-white rounded-xl md:rounded-2xl p-5 md:p-8 border border-blue-100 shadow-sm mb-5 md:mb-8 max-w-4xl mx-auto w-full">
+                    <div class="text-xl md:text-3xl font-bold text-blue-800 mb-3 md:mb-5 flex items-center gap-2 md:gap-3"><span>🧮</span> 百搭公式 (不會用錯)</div>
+                    <div class="font-bold text-teal-900 bg-teal-50 flex items-center justify-between gap-4 px-5 py-3 md:px-8 md:py-4 rounded-xl mb-4 md:mb-6 text-xl md:text-3xl border border-teal-200 shadow-sm w-full text-center md:text-left">
+                        <span>${data.formula}</span>
+                        <button onclick="window.speakText('${data.formula.replace(/\[|\]/g, '')}', event)" class="tts-btn inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full bg-teal-100 text-teal-600 hover:bg-teal-200 shadow-sm focus:outline-none opacity-80 hover:opacity-100 flex-shrink-0" title="朗讀">🗣️</button>
+                    </div>
+                    <div class="text-lg md:text-2xl text-gray-700 bg-gray-50 px-4 py-3 md:px-6 md:py-4 rounded-xl border border-gray-200 flex items-center justify-between gap-3 w-full">
+                        <div class="flex-1">✅ 例：<span class="font-bold text-gray-900">${data.examples}</span></div>
+                        <button onclick="window.speakText('${data.examples}', event)" class="tts-btn inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 shadow-sm focus:outline-none opacity-80 hover:opacity-100 flex-shrink-0" title="朗讀">🗣️</button>
+                    </div>
+                </div>`;
+
+            const wrongHtml = `
+                <div class="bg-red-50 rounded-xl md:rounded-2xl p-5 md:p-8 border border-red-200 shadow-sm mb-4 md:mb-6 max-w-4xl mx-auto w-full">
+                    <div class="text-xl md:text-3xl font-bold text-red-800 mb-3 md:mb-5 flex items-center gap-2 md:gap-3"><span>💥</span> 地雷區 (是非題)</div>
+                    <div class="flex items-start gap-3 md:gap-5 bg-white p-4 md:p-6 rounded-xl border border-red-100 shadow-sm">
+                        <span class="text-3xl md:text-4xl mt-1">❌</span>
+                        <div>
+                            <span class="font-bold text-gray-900 text-xl md:text-3xl line-through decoration-red-500 decoration-[3px]">${data.wrong.text}</span>
+                            <p class="text-base md:text-xl text-gray-700 mt-2 md:mt-3 font-medium bg-red-50 p-3 md:p-4 rounded-lg border border-red-100 leading-relaxed">⚠️ 點解錯：${data.wrong.reason}</p>
+                        </div>
+                    </div>
+                </div>`;
+
+            let passiveHeader = '';
+            if (legoHtml || formulaHtml || wrongHtml) {
+                 passiveHeader = `
+                    <div class="w-full flex items-center justify-center gap-3 md:gap-5 my-8 md:my-12 max-w-4xl mx-auto">
+                        <div class="h-px bg-blue-300 flex-1"></div>
+                        <span class="text-blue-900 font-black text-2xl md:text-4xl tracking-widest px-4">📚 詞語學習秘笈</span>
+                        <div class="h-px bg-blue-300 flex-1"></div>
+                    </div>
+                `;
+            }
+
+            advContainer.innerHTML = interactiveHeader + gameHtml + sentenceHtml + passiveHeader + legoHtml + formulaHtml + wrongHtml;
+            advContainer.classList.remove('hidden');
+        };
+
+        window.setupLearningArea = function(word) {
             const display = document.getElementById('word-display');
             display.innerHTML = '';
             
-            // 更新並顯示詞語解釋
             const expBox = document.getElementById('word-explanation');
             const expData = wordExplanations[word] || { text: '暫無解釋', icon: '💡' };
             
             expBox.innerHTML = `
-                <div class="flex items-center gap-4 justify-center md:justify-start">
-                    <div class="text-4xl md:text-5xl filter drop-shadow-md transform hover:scale-110 transition-transform duration-300 cursor-default">${expData.icon}</div>
-                    <div class="text-left flex-1">
-                        <span class="text-amber-700 font-bold text-sm tracking-widest block mb-1">詞義小提示</span>
-                        <span class="text-gray-800 text-lg md:text-xl font-medium tracking-wide leading-relaxed block">${expData.text}</span>
+                <div class="flex items-start md:items-center gap-4 md:gap-8 justify-center md:justify-start w-full">
+                    <div class="text-6xl md:text-7xl filter drop-shadow-md transform hover:scale-110 transition-transform duration-300 cursor-default">${expData.icon}</div>
+                    <div class="text-left flex-1 flex items-center justify-between gap-2">
+                        <span class="text-gray-800 text-2xl sm:text-3xl md:text-4xl font-bold tracking-wide leading-relaxed block">${expData.text}</span>
+                        <button onclick="window.speakText('${expData.text.replace(/<[^>]*>?/gm, '').replace(/'/g, "\\'")}', event)" class="tts-btn inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 text-amber-600 hover:bg-amber-200 shadow-sm focus:outline-none opacity-80 hover:opacity-100 flex-shrink-0" title="朗讀">🗣️</button>
                     </div>
                 </div>
             `;
-            expBox.classList.remove('fade-in-up');
-            void expBox.offsetWidth; // 強制重繪
-            expBox.classList.add('fade-in-up');
             
+            window.renderAdvancedUsage(word);
+
             [...word].forEach((char, index) => {
                 const btn = document.createElement('button');
                 btn.className = 'char-btn pb-2 border-b-8 border-transparent hover:text-red-600 transition-all focus:outline-none transform hover:-translate-y-1 duration-300';
                 btn.textContent = char;
-                btn.onclick = () => selectChar(char, btn);
+                btn.onclick = () => {
+                    window.playSound('pop');
+                    window.selectChar(char, btn);
+                };
                 display.appendChild(btn);
             });
 
             if (display.children.length > 0) {
-                selectChar(word[0], display.children[0]);
+                window.selectChar(word[0], display.children[0]);
             }
-        }
+        };
 
-        function selectChar(char, element) {
-            // UI 更新
+        window.selectChar = function(char, element) {
             document.querySelectorAll('.char-btn').forEach(btn => {
                 btn.classList.remove('border-red-500', 'text-red-600');
             });
@@ -326,73 +1182,81 @@
                 setTimeout(() => element.classList.remove('pop'), 400);
             }
 
-            // 觸發右側面板的淡入動畫
             const rightPanel = document.getElementById('right-info-panel');
             if (rightPanel) {
                 rightPanel.classList.remove('fade-in-up');
-                void rightPanel.offsetWidth; // 強制重繪以重啟動畫
+                void rightPanel.offsetWidth; 
                 rightPanel.classList.add('fade-in-up');
             }
 
-            document.getElementById('info-char').textContent = char;
-            const charData = dict[char] || { radical: '？', components: '資料建設中' };
+            const charHeader = document.getElementById('info-char-container');
+            if (charHeader) {
+                charHeader.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-gray-600 font-bold text-lg lg:text-2xl whitespace-nowrap">目標字：</span>
+                        <span id="info-char" class="font-bold text-4xl lg:text-7xl kaishu text-amber-700 bg-amber-50 px-4 lg:px-8 py-1 lg:py-2 rounded-lg lg:rounded-2xl shadow-sm border border-amber-200 inline-block transition-all hover:scale-105 cursor-pointer" onclick="window.playSound('pop')">${char}</span>
+                    </div>
+                    <button onclick="window.speakText('${char}', event)" class="tts-btn inline-flex items-center justify-center w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-amber-100 text-amber-600 hover:bg-amber-200 shadow-sm focus:outline-none opacity-80 hover:opacity-100 flex-shrink-0 text-xl lg:text-3xl" title="朗讀">🗣️</button>
+                `;
+            }
+
+            const charData = dict[char] || { radical: '？', components: ['資料建設中'], hint: '暫無提示' };
             
-            // 重置遊戲與部件顯示
             document.getElementById('components-section').style.opacity = '0.3';
             document.getElementById('components-section').style.filter = 'grayscale(100%)';
-            document.getElementById('info-components').textContent = '???';
-            document.getElementById('info-components').classList.remove('text-teal-700');
-            document.getElementById('info-components').classList.add('text-gray-400');
+            document.getElementById('info-components').innerHTML = '<span class="text-3xl text-gray-400 kaishu font-bold">???</span>';
+            document.getElementById('char-hint-box').classList.add('hidden');
             
-            // 建立部首選擇題
-            setupRadicalGame(charData.radical, charData.components);
+            window.setupRadicalGame(charData.radical, charData.components, charData.hint);
+            window.setQuizMessage('💡 點擊左邊「▶️ 播放」看筆順，或「✍️ 自己寫」拿 2 顆星星！⭐', 'blue');
 
-            // 訊息重置
-            setQuizMessage('💡 點擊「▶️ 播放」觀看筆順，或「✍️ 自己寫」親自挑戰！', 'blue');
-
-            // 建立筆順畫布
             const canvas = document.getElementById('character-canvas');
             canvas.innerHTML = ''; 
             document.getElementById('success-animation').classList.add('hidden');
             document.getElementById('success-animation').classList.remove('star-animate');
             
-            writer = HanziWriter.create('character-canvas', char, {
-                width: 260,
-                height: 260,
-                padding: 15,
+            let canvasSize = 260; 
+            if (window.innerWidth >= 1024) canvasSize = 350; 
+            else if (window.innerWidth >= 640) canvasSize = 320; 
+
+            window.writer = HanziWriter.create('character-canvas', char, {
+                width: canvasSize,
+                height: canvasSize,
+                padding: 20,
                 strokeAnimationSpeed: 1.5,
                 delayBetweenStrokes: 100,
                 showOutline: true,
                 strokeColor: '#b91c1c', 
-                radicalColor: '#0f766e', 
+                radicalColor: '#14b8a6', 
                 outlineColor: '#e5e7eb',
-                drawingWidth: 25,
+                drawingWidth: 30,
                 charDataLoader: function(c, onComplete) {
-                    fetch(`https://cdn.jsdelivr.net/npm/hanzi-writer-data-tc@1.0.1/${c}.json`)
-                        .then(res => res.ok ? res.json() : fetch(`https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${c}.json`).then(r => r.json()))
-                        .then(data => onComplete(data))
-                        .catch(err => {
-                            canvas.innerHTML = '<div class="absolute inset-0 flex items-center justify-center text-red-500 font-bold bg-white/80 text-xl">暫無此字筆順資料</div>';
-                        });
+                    if (window.charDataCache[c]) {
+                        onComplete(window.charDataCache[c]);
+                    } else {
+                        fetch(`https://cdn.jsdelivr.net/npm/hanzi-writer-data-tc@1.0.1/${c}.json`)
+                            .then(res => res.ok ? res.json() : fetch(`https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/${c}.json`).then(r => r.json()))
+                            .then(data => { window.charDataCache[c] = data; onComplete(data); })
+                            .catch(err => {
+                                canvas.innerHTML = '<div class="absolute inset-0 flex items-center justify-center text-red-500 font-bold bg-white/80 text-xl">暫無資料</div>';
+                            });
+                    }
                 }
             });
-        }
+        };
 
-        // --- 小遊戲邏輯 ---
-
-        function setupRadicalGame(correctRadical, componentsText) {
+        window.setupRadicalGame = function(correctRadical, componentsArray, hintText) {
             const optionsContainer = document.getElementById('radical-options');
             const statusText = document.getElementById('game-status');
             optionsContainer.innerHTML = '';
-            statusText.textContent = '請選出這個字的部首！';
-            statusText.className = 'text-sm font-bold text-amber-600 bg-amber-100 px-3 py-1 rounded-full';
+            statusText.textContent = '快找出這個字的部首！';
+            statusText.className = 'text-sm md:text-xl font-bold text-amber-600 bg-amber-100 px-3 md:px-5 py-1.5 md:py-3 rounded-full w-full text-center';
 
             if(correctRadical === '？') {
-                optionsContainer.innerHTML = '<span class="text-gray-500">暫無部首資料</span>';
+                optionsContainer.innerHTML = '<span class="text-gray-500 text-lg">暫無部首資料</span>';
                 return;
             }
 
-            // 隨機選兩個不重複的錯誤部首
             let wrongOptions = [];
             while(wrongOptions.length < 2) {
                 const random = commonRadicals[Math.floor(Math.random() * commonRadicals.length)];
@@ -402,31 +1266,34 @@
                 }
             }
 
-            // 混合選項並打亂
             let allOptions = [correctRadical, ...wrongOptions];
             allOptions.sort(() => Math.random() - 0.5);
 
-            // 建立按鈕
             allOptions.forEach(opt => {
                 const btn = document.createElement('button');
-                // 取出括號外的主要字元顯示在按鈕上
                 const displayOpt = opt.split(' ')[0]; 
                 
-                btn.className = 'w-16 h-16 text-3xl kaishu font-bold bg-white border-2 border-gray-300 rounded-xl shadow-sm hover:bg-gray-50 transition-all duration-300 focus:outline-none';
+                btn.className = 'w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 text-3xl sm:text-4xl lg:text-5xl kaishu font-bold bg-white border-2 border-gray-300 rounded-xl md:rounded-2xl shadow-sm hover:bg-gray-50 transition-all duration-300 focus:outline-none hover:-translate-y-1';
                 btn.textContent = displayOpt;
                 
                 btn.onclick = function() {
                     if (opt === correctRadical) {
-                        // 答對處理
-                        this.className = 'w-16 h-16 text-3xl kaishu font-bold bg-green-100 border-4 border-green-500 text-green-700 rounded-xl shadow-md pop transition-all duration-300';
-                        statusText.innerHTML = '✨ 答對了！獲得星星！';
-                        statusText.className = 'text-sm font-bold text-green-700 bg-green-100 px-3 py-1 rounded-full pop transition-all';
+                        window.playSound('correct');
+                        window.updateCombo(true); 
+                        this.className = 'w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 text-3xl sm:text-4xl lg:text-5xl kaishu font-bold bg-green-100 border-4 border-green-500 text-green-700 rounded-xl md:rounded-2xl shadow-md pop transition-all duration-300';
                         
-                        // 加分並解鎖部件
-                        addScore(1);
-                        unlockComponents(correctRadical, componentsText);
+                        const currentChar = document.getElementById('info-char').textContent;
+                        if (!window.completedTasks.has(`radical_${currentChar}`)) {
+                            window.completedTasks.add(`radical_${currentChar}`);
+                            window.addScore(1);
+                            statusText.innerHTML = '✨ 答對了！解鎖拆字與防錯密碼！ <span class="text-yellow-600">⭐ +1</span>';
+                        } else {
+                            statusText.innerHTML = '✨ 答對了！解鎖拆字與防錯密碼！';
+                        }
                         
-                        // 停用其他按鈕並平滑淡出
+                        statusText.className = 'text-sm md:text-xl font-bold text-green-800 bg-green-200 px-3 md:px-5 py-1.5 md:py-3 rounded-full pop transition-all w-full text-center';
+                        window.unlockComponents(componentsArray, hintText);
+                        
                         Array.from(optionsContainer.children).forEach(child => {
                             child.onclick = null;
                             if(child !== this) {
@@ -436,102 +1303,132 @@
                             }
                         });
                     } else {
-                        // 答錯處理 (不扣分，給予灰色視覺提示並搖晃)
-                        this.className = 'w-16 h-16 text-3xl kaishu font-bold bg-gray-100 border-2 border-gray-200 text-gray-400 rounded-xl shake transition-all duration-300';
-                        statusText.innerHTML = '🤔 再想想看？';
-                        statusText.className = 'text-sm font-bold text-red-500 bg-red-50 px-3 py-1 rounded-full transition-all';
+                        window.playSound('wrong');
+                        window.updateCombo(false); 
+                        this.className = 'w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 text-3xl sm:text-4xl lg:text-5xl kaishu font-bold bg-gray-100 border-2 border-gray-200 text-gray-400 rounded-xl md:rounded-2xl shake transition-all duration-300';
+                        statusText.innerHTML = '🤔 不對喔，再試試！';
+                        statusText.className = 'text-sm md:text-xl font-bold text-red-600 bg-red-100 px-3 md:px-5 py-1.5 md:py-3 rounded-full transition-all w-full text-center';
                         setTimeout(() => this.classList.remove('shake'), 400);
                     }
                 };
                 optionsContainer.appendChild(btn);
             });
-        }
+        };
 
-        function unlockComponents(radical, components) {
+        window.unlockComponents = function(componentsArray, hintText) {
             const section = document.getElementById('components-section');
-            const compText = document.getElementById('info-components');
+            const compContainer = document.getElementById('info-components');
+            const hintBox = document.getElementById('char-hint-box');
+            const hintTextEl = document.getElementById('char-hint-text');
             
             section.style.opacity = '1';
             section.style.filter = 'grayscale(0%)';
-            compText.textContent = components;
-            compText.classList.remove('text-gray-400');
-            compText.classList.add('text-teal-700');
             
-            // 重啟部件文字的彈跳動畫
-            compText.classList.remove('pop');
-            void compText.offsetWidth; 
-            compText.classList.add('pop');
-        }
-
-        function addScore(points) {
-            globalScore += points;
-            const display = document.getElementById('score-display');
-            display.textContent = globalScore;
-            display.classList.add('pop');
-            display.style.color = '#ca8a04'; // yellow-600
-            setTimeout(() => {
-                display.classList.remove('pop');
-                display.style.color = '';
-            }, 400);
-        }
-
-        // --- 筆順控制與測驗邏輯 ---
-
-        function setQuizMessage(msg, colorType) {
-            const msgBox = document.getElementById('quiz-message');
-            const colorMap = {
-                'blue': 'text-blue-800 bg-blue-50 border-blue-400',
-                'teal': 'text-teal-800 bg-teal-50 border-teal-500',
-                'red': 'text-red-700 bg-red-50 border-red-400',
-                'green': 'text-green-800 bg-green-50 border-green-500'
-            };
-            
-            msgBox.innerHTML = msg;
-            msgBox.parentElement.className = `mt-5 border-l-8 p-4 rounded-r-xl shadow-sm transition-colors duration-300 ${colorMap[colorType].split(' ').slice(1).join(' ')}`;
-            msgBox.className = `font-bold text-lg flex items-center gap-2 ${colorMap[colorType].split(' ')[0]}`;
-        }
-
-        function playAnimation() {
-            if(writer) {
-                writer.cancelQuiz();
-                setQuizMessage('👀 眼睛看清楚，跟著動畫記筆順...', 'teal');
-                writer.animateCharacter();
+            compContainer.innerHTML = '';
+            if(componentsArray && Array.isArray(componentsArray)){
+                componentsArray.forEach((comp, index) => {
+                    const span = document.createElement('span');
+                    span.className = "text-4xl md:text-5xl text-teal-800 kaishu font-bold bg-teal-50 border-2 border-teal-200 px-4 py-2 rounded-xl shadow-sm";
+                    span.textContent = comp;
+                    compContainer.appendChild(span);
+                    
+                    if (index < componentsArray.length - 1) {
+                        const plus = document.createElement('span');
+                        plus.className = "text-3xl text-gray-400 font-bold self-center px-2";
+                        plus.textContent = "+";
+                        compContainer.appendChild(plus);
+                    }
+                });
             }
-        }
 
-        function startQuiz() {
-            if(writer) {
-                setQuizMessage('🎯 請在田字格裡寫寫看！寫錯沒關係，再試一次就好。', 'teal');
+            if(hintText) {
+                hintTextEl.textContent = hintText;
+                hintBox.classList.remove('hidden');
+                hintBox.classList.add('fade-in-up');
+            }
+
+            compContainer.classList.remove('pop');
+            void compContainer.offsetWidth; 
+            compContainer.classList.add('pop');
+        };
+
+        window.playAnimation = function() {
+            window.playSound('pop');
+            if(window.writer) {
+                window.writer.cancelQuiz();
+                window.setQuizMessage('👀 看清楚，跟著動畫記筆順...', 'teal');
+                window.writer.animateCharacter();
+            }
+        };
+
+        window.startQuiz = function() {
+            window.playSound('pop');
+            if(window.writer) {
+                window.writer.cancelQuiz(); 
+                window.currentMistakes = 0;
+                window.usedHint = false;
+                window.setQuizMessage('🎯 在田字格裡寫寫看！寫錯再試就好。完成可得 2 顆星星喔！⭐', 'teal');
                 
-                // 隱藏可能存在的過關星星
                 document.getElementById('success-animation').classList.add('hidden');
                 document.getElementById('success-animation').classList.remove('star-animate');
 
-                writer.quiz({
+                window.writer.quiz({
+                    leniency: 1.5, 
+                    showHintAfterMisses: 1, 
                     onMistake: function(strokeData) {
-                        setQuizMessage('💪 哎呀！筆畫順序或位置不太對，再試一下！', 'red');
+                        window.playSound('wrong');
+                        window.updateCombo(false); 
+                        window.currentMistakes++;
+                        if (window.currentMistakes >= 1 && !window.usedHint) {
+                            window.usedHint = true;
+                            window.setQuizMessage('💡 沒關係，跟著淡淡的底字描一次！(安慰獎1分)', 'blue');
+                        } else if (!window.usedHint) {
+                            window.setQuizMessage('💪 哎呀！筆畫順序不太對，再來一次！', 'red');
+                        }
                     },
                     onCorrectStroke: function(strokeData) {
-                        setQuizMessage('✅ 寫對了！請繼續寫下一筆。', 'teal');
+                        window.playSound('pop');
+                        if (!window.usedHint) window.setQuizMessage('✅ 漂亮！繼續寫下一筆。', 'teal');
                     },
                     onComplete: function(summaryData) {
-                        setQuizMessage('🌟 太棒了！完美寫出這個字！獲得 2 顆星星！', 'green');
-                        addScore(2);
+                        window.playSound('star');
                         
-                        // 播放田字格上的大星星動畫
+                        if (window.currentMistakes === 0 && !window.usedHint) {
+                            window.updateCombo(true);
+                        }
+                        
+                        window.showCheer(); 
+                        
+                        const currentChar = document.getElementById('info-char').textContent;
+                        if (!window.completedTasks.has(`write_${currentChar}`)) {
+                            window.completedTasks.add(`write_${currentChar}`);
+                            if (window.usedHint) {
+                                window.addScore(1);
+                                window.setQuizMessage('🌟 完成了！獲得 1 顆星星安慰獎！下次自己寫會拿到2顆喔！', 'blue');
+                            } else {
+                                window.addScore(2);
+                                window.setQuizMessage('🌟 完美通關！自己寫出來了，獲得 2 顆星星！', 'green');
+                            }
+                        } else {
+                            window.setQuizMessage('🌟 完美通關！字寫得太漂亮了！', 'green');
+                        }
+                        
                         const starAnim = document.getElementById('success-animation');
                         starAnim.classList.remove('hidden');
-                        // 強制重啟動畫
                         starAnim.classList.remove('star-animate');
                         void starAnim.offsetWidth; 
                         starAnim.classList.add('star-animate');
                     }
                 });
             }
-        }
+        };
 
-        // 啟動程式
-        window.onload = init;
+        // 🌟 啟動初始化
+        window.init = function() {
+            window.renderWordList();
+        };
+
+        window.onload = window.init;
     </script>
 </body>
 </html>
